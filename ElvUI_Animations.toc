@@ -1,0 +1,15 @@
+## Interface: 60200
+## Title: |cff1784d1ElvUI|r |cff00b3ffAnimations|r
+## Author: Benjamin Odom
+## Version: 0.5
+## Notes: This is a beta stage addon to add animations to the base |cff1784d1ElvUI|r
+
+## RequiredDeps: ElvUI
+
+## X-Category: Interface Enhancements
+
+## DefaultState: enabled
+
+ElvUI_Animations\enUS.lua
+ElvUI_Animations\Config.lua
+ElvUI_Animations\Core.lua
