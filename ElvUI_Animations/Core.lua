@@ -9,11 +9,12 @@
 
 local E, L, V, P, G = unpack(ElvUI); -- Import: Engine, Locales, PrivateDB, ProfileDB, GlobalDB
 
-local ElvUI_Animations = E:GetModule('ElvUI_Animations', 'AceHook-3.0', 'AceEvent-3.0', 'AceTimer-3.0'); -- Create a plugin within ElvUI and adopt AceHook-3.0, AceEvent-3.0 and AceTimer-3.0. We can make use of these later.
-ElvUI_Animations.version = GetAddOnMetadata("ElvUI_Animations", "Version")
+local _ElvUI_Animations = E:GetModule('_ElvUI_Animations', 'AceHook-3.0', 'AceEvent-3.0', 'AceTimer-3.0'); -- Create a plugin within ElvUI and adopt AceHook-3.0, AceEvent-3.0 and AceTimer-3.0. We can make use of these later.
+_ElvUI_Animations.version = GetAddOnMetadata("ElvUI_Animations", "Version")
 
-local EP = LibStub("LibElvUIPlugin-1.0") -- We can use this to automatically insert our GUI tables when ElvUI_Config is loaded.
-local addonName, addonTable = ... -- See http://www.wowinterface.com/forums/showthread.php?t=51502&p=304704&postcount=2
+local _EP = LibStub("LibElvUIPlugin-1.0") -- We can use this to automatically insert our GUI tables when ElvUI_Config is loaded.
+local _AddonName, _AddonTable = ... -- See http://www.wowinterface.com/forums/showthread.php?t=51502&p=304704&postcount=2
+
 
 local MyWorldFrame -- Will be used to create an invisible frame parented to the actual WorldFrame
 local MyUIParent
@@ -405,9 +406,9 @@ function ElvUI_Animations:OnUpdate(DeltaTime)
 	--collectgarbage()
 end
 
-function ElvUI_Animations:Initialize()
+function _ElvUI_Animations:Initialize()
 	-- Register plugin so options are properly inserted when config is loaded
-	EP:RegisterPlugin(addonName, ElvUI_Animations.InsertOptions)
+	_EP:RegisterPlugin(_AddonName, _ElvUI_Animations.InsertOptions)
 end
 
 local ShouldAppear = false

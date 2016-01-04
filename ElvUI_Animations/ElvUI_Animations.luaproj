@@ -24,8 +24,10 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Cache.lua" />
     <Compile Include="Config.lua" />
     <Compile Include="Core.lua" />
+    <Compile Include="defaults.lua" />
     <Compile Include="enUS.lua" />
   </ItemGroup>
   <ItemGroup>

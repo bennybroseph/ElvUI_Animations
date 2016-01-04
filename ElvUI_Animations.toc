@@ -11,5 +11,7 @@
 ## DefaultState: enabled
 
 ElvUI_Animations\enUS.lua
+ElvUI_Animations\defaults.lua
 ElvUI_Animations\Config.lua
+ElvUI_Animations\Cache.lua
 ElvUI_Animations\Core.lua
