@@ -12,26 +12,18 @@ local E, L, V, P, G = unpack(ElvUI);	-- Import: Engine, Locales, PrivateDB, Prof
 local _DataBase
 local _Options
 
-local _ElvUI_Animations = E:GetModule('ElvUI_Animations', 'AceHook-3.0', 'AceEvent-3.0', 'AceTimer-3.0'); -- Create a plugin within ElvUI and adopt AceHook-3.0, AceEvent-3.0 and AceTimer-3.0. We can make use of these later.
+local _ElvUI_Animations = E:NewModule('ElvUI_Animations', 'AceHook-3.0', 'AceEvent-3.0', 'AceTimer-3.0');	-- Create a plugin within ElvUI and adopt AceHook-3.0, AceEvent-3.0 and AceTimer-3.0. We can make use of these later.
+_ElvUI_Animations.version = GetAddOnMetadata("ElvUI_Animations", "Version")
+
+E:RegisterModule(_ElvUI_Animations:GetName()) -- Register the module with ElvUI. ElvUI will now call _ElvUI_Animations:Initialize() when ElvUI is ready to load our plugin.
+
+local _EP = LibStub("LibElvUIPlugin-1.0") -- We can use this to automatically insert our GUI tables when ElvUI_Config is loaded.
 
 local _AddonName, _AddonTable = ... -- See http://www.wowinterface.com/forums/showthread.php?t=51502&p=304704&postcount=2
 
 
---V.ElvUI_Animations = {
---	Combat = {
---		AnimationGroup = { },
---		AlphaAnimation = { },
---	},
---	Animation = {
---		AnimationGroup = { },
---		AlphaAnimation = { },
---		TranslationAnimation = { },
---	},
-
---	AlphaBuildUp = { },	-- For some reason adding less than 0.01 alpha to a frame seems to cause floating point error where it isn't added to the overall alpha of the frame
-
---	DeleteTab = "",
---}
+local _System = _AddonTable._System
+local _Cache = _AddonTable.Cache
 
 -- Function we can call when a setting changes.
 local function Update(Index)
@@ -198,10 +190,7 @@ local function CreateConfigTab(KeyName)
 					function(info, value)
 						local Parse = string.gsub(value, "%s+", "")
 						local Current = { Start = 1, End = string.len(Parse) }	
-							
---									local ToPrint = ""
---									for j = 1, string.len(value) do ToPrint = ToPrint.." "..string.sub(value, j, j) end
---									print(ToPrint)
+
 						DataBase.Config.Frame = { Fade = DataBase.Config.Frame.Fade, }
 						local j = 1
 									
@@ -558,6 +547,411 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 	return AnimationPage
 end
 
+local function CreateTreeElement(KeyName)
+	local DataBase = _DataBase[KeyName]
+
+	local TreeElement = { }
+	
+	TreeElement = {
+		order = DataBase.Config.Order,
+		type = "group",
+		name = DataBase.Config.Name,
+		childGroups = "tab",	
+		args = {
+			CombatOptions = {
+				order = 1,
+				type = "group",
+				name = "Combat Fade Options",
+				args = {
+					AlphaOptions = {
+						order = 5,
+						type = "group",
+						name = "Alpha Options",
+						guiInline = true,
+						args = {
+							In = {
+								order = 1,
+								type = "range",
+								name = "In Combat Alpha",
+								desc = "What alpha the frame should be set to when in combat",
+								min = 0,
+								max = 1,
+								step = 0.01,
+								get = 
+									function(info)
+										return DataBase.Combat.Alpha.In
+									end,
+								set = 
+									function(info, value)
+										DataBase.Combat.Alpha.In = value
+									end,
+							},
+							Out = {
+								order = 2,
+								type = "range",
+								name = "Out of Combat Alpha",
+								desc = "What alpha the frame should be set to when not in combat",
+								min = 0,
+								max = 1,
+								step = 0.01,
+								get = 
+									function(info)
+										return DataBase.Combat.Alpha.Out
+									end,
+								set = 
+									function(info, value)
+										DataBase.Combat.Alpha.Out = value
+									end,
+							},
+						},
+					},
+					DurationOptions = {
+						order = 6,
+						type = "group",
+						name = "Duration Options",
+						guiInline = true,
+						args = {
+							In = {
+								order = 1,
+								type = "range",
+								name = "To In Combat Alpha",
+								desc = "How long it should take to fade to the in combat alpha",
+								min = 0,
+								max = 5,
+								step = 0.1,
+								get = 
+									function(info)
+										return DataBase.Combat.Duration.In
+									end,
+								set = 
+									function(info, value)
+										DataBase.Combat.Duration.In = value
+									end,
+							},
+							Out = {
+								order = 2,
+								type = "range",
+								name = "To Out of Combat Alpha",
+								desc = "How long it should take to fade to the out of combat alpha",
+								min = 0,
+								max = 5,
+								step = 0.1,
+								get = 
+									function(info)
+										return DataBase.Combat.Duration.Out
+									end,
+								set = 
+									function(info, value)
+										DataBase.Combat.Duration.Out = value
+									end,
+							},									
+						},
+					},
+					SmoothingOptions = {
+						order = 7,
+						type = "group",
+						name = "Smoothing Options",
+						guiInline = true,
+						args = {
+							In = {
+								order = 1,
+								type = "select",
+								name = "In Combat Smoothing",
+								desc = "The type of smoothing to use when fading to the in combat alpha",
+								values = {
+									NONE = "None",
+									IN = "In",
+									OUT = "Out",
+									IN_OUT = "In/Out",
+								},
+								get = 
+									function(info)
+										return DataBase.Combat.Smoothing.In
+									end,
+								set = 
+									function(info, value)
+										DataBase.Combat.Smoothing.In = value
+									end,
+							},
+							Out = {
+								order = 1,
+								type = "select",
+								name = "Out of Combat Smoothing",
+								desc = "The type of smoothing to use when fading to the out of combat alpha",
+								values = {
+									NONE = "None",
+									IN = "In",
+									OUT = "Out",
+									IN_OUT = "In/Out",
+								},
+								get = 
+									function(info)
+										return DataBase.Combat.Smoothing.Out
+									end,
+								set = 
+									function(info, value)
+										DataBase.Combat.Smoothing.Out = value
+									end,
+							},
+						},
+					},
+					MouseOptions = {
+						order = -1,
+						type = "group",
+						name = "Mouse Options",
+						guiInline = true,
+						args = {
+							Enabled = {
+								order = 1,
+								type = "toggle",
+								name = "Enable Mouse-Over",
+								desc = "Whether or not to fade the frame based on current mouse focus",
+								get = 
+									function(info)
+										return DataBase.Combat.Mouse.Enabled
+									end,
+								set = 
+									function(info, value)
+										DataBase.Combat.Mouse.Enabled = value
+										Update(i)	-- We changed a toggle, call our Update function
+									end,
+							},
+							DurationOn = {
+								order = 2,
+								type = "range",
+								name = "To Mouse-Over Alpha",
+								desc = "How long it should take to fade to the mouse-over alpha",
+								min = 0,
+								max = 5,
+								step = 0.1,
+								get = function(info)
+									return DataBase.Combat.Mouse.Duration.On
+								end,
+								set = function(info, value)
+									DataBase.Combat.Mouse.Duration.On = value
+								end,
+							},
+							DurationOff = {
+								order = 3,
+								type = "range",
+								name = "From Mouse-Over Alpha",
+								desc = "How long it should take to fade back to it's original alpha",
+								min = 0,
+								max = 5,
+								step = 0.1,
+								get = function(info)
+									return DataBase.Combat.Mouse.Duration.Off
+								end,
+								set = function(info, value)
+									DataBase.Combat.Mouse.Duration.Off = value
+								end,
+							},
+							Alpha = {
+								order = 4,
+								type = "range",
+								name = "Mouse-Over Alpha",
+								desc = "What alpha to set the frame to when moused over",
+								min = 0,
+								max = 1,
+								step = 0.01,
+								get = function(info)
+									return DataBase.Combat.Mouse.Alpha
+								end,
+								set = function(info, value)
+									DataBase.Combat.Mouse.Alpha = value
+								end,
+							},
+						},
+					}
+				},
+			},
+					
+			Animation = {
+				order = 3,
+				type = "group",
+				name = "Animation Options",	
+				args = {
+					General = {
+						order = 5,
+						type = "group",
+						name = "General Options",
+						guiInline = true,
+						args = {
+							StartDelay = {
+								order = 2,
+								type = "range",
+								name = "Animation Start Delay",
+								desc = "How long to wait until the animation should start",
+								min = 0,
+								max = 5,
+								step = 0.1,
+								get = 
+									function(info)
+										return DataBase.Animation.Default.Delay.Start
+									end,
+								set = 
+									function(info, value)
+										DataBase.Animation.Default.Delay.Start = value
+									end,
+							},
+							EndDelay = {
+								order = 3,
+								type = "range",
+								name = "Animation End Delay",
+								desc = "How long to wait after the animation has stopped until it should be considered finished",
+								min = 0,
+								max = 5,
+								step = 0.1,
+								get = 
+									function(info)
+										return DataBase.Animation.Default.Delay.End
+									end,
+								set = 
+									function(info, value)
+										DataBase.Animation.Default.Delay.End = value
+									end,
+							},
+							Duration = {
+								order = 4,
+								type = "range",
+								name = "Animation Duration",
+								desc = "How long the animations will take",
+								min = 0,
+								max = 5,
+								step = 0.1,
+								get = 
+									function(info)
+										return DataBase.Animation.Default.Duration
+									end,
+								set = 
+									function(info, value)
+										DataBase.Animation.Default.Duration = value
+									end,
+							},
+						},
+					},	
+					Division = {
+						order = 6,
+						type = "header",
+						name = "Animations",
+					},				
+				},
+			},
+			TabConfig = {
+				order = -1,
+				type = "group",
+				name = "Configure",
+				args = { },
+			},
+		},
+	}
+
+	for k, v in pairs(DataBase.Animation) do
+		if string.find(k, "_Tab") then
+			TreeElement.args.Animation.args[k] = CreateAnimationPage(KeyName, k)
+		end
+	end
+				
+	if KeyName == "Default_Tab" then
+		TreeElement.args.Animation.args.TestAll = {
+			order = 1,
+			type = "execute",
+			name = "Test All!",
+			desc = "Test all the animations at the same time",
+			func = 
+				function()
+					ElvUI_Animations:ReloadCombatAnimationGroup()
+
+					for i = 2, #E.db.ElvUI_Animations do
+						ElvUI_Animations:AttemptAnimation(i)
+					end
+				end,
+		}			
+		for k, v in pairs(_DataBase) do
+			if string.find(k, "_Tab") then
+				TreeElement.args.TabConfig.args[_System:GetKey(_DataBase[k]).."Config"] = CreateConfigTab(k)
+			end
+		end		
+	else
+		TreeElement.args.TabConfig.args[_System:GetKey(DataBase).."Config"] = CreateConfigTab(i)
+
+		TreeElement.args.Combat.args.Enabled = {
+			order = 1,
+			type = "toggle",
+			name = "Enabled",
+			desc = "Whether or not to fade the frame based on combat flags",
+			get = 
+				function(info)
+					return DataBase.Combat.Enabled
+				end,
+			set = 
+				function(info, value)
+					DataBase.Combat.Enabled = value
+					Update(i)	-- We changed a toggle, call our Update function
+				end,
+		}
+		TreeElement.args.Combat.args.UseDefaults = {
+			order = 2,
+			type = "toggle",
+			name = "Use Defaults",
+			desc = "Whether or not to use the default values or set up individual values for this frame",
+			get = 
+				function(info)
+					return DataBase.Combat.UseDefaults
+				end,
+			set = 
+				function(info, value)
+					DataBase.Combat.UseDefaults = value
+					Update(i)	-- We changed a toggle, call our Update function
+				end,
+		}
+		TreeElement.args.Animation.args.Enabled = {
+			order = 1,
+			type = "toggle",
+			name = "Enabled",
+			desc = "Whether or not to animate this Frame",
+			get = 
+				function(info)
+					return DataBase.Animation.Enabled
+				end,
+			set = 
+				function(info, value)
+					DataBase.Animation.Enabled = value
+					Update(i)	-- We changed a toggle, call our Update function
+				end,
+		}
+		TreeElement.args.Animation.args.TestAll = {
+			order = 2,
+			type = "execute",
+			name = "Test All!",
+			desc = "Test all the animations at the same time",
+			func = 
+				function()
+					ElvUI_Animations:ReloadCombatAnimationGroup()
+
+					ElvUI_Animations:AttemptAnimation(i)
+				end,
+		}
+		TreeElement.args.Animation.args.General.args.UseDefaults = {
+			order = 1,
+			type = "toggle",
+			name = "Use Defaults",
+			desc = "Whether or not to use the default values or set up individual values for this frame",
+			get = 
+				function(info)
+					return DataBase.Animation.UseDefaults
+				end,
+			set = 
+				function(info, value)
+					DataBase.Animation.UseDefaults = value
+					Update(i)	-- We changed a toggle, call our Update function
+				end,
+		}
+	end
+
+	return TreeElement
+end
+
 -- This function inserts our GUI table into the ElvUI Config. You can read about AceConfig here: http://www.wowace.com/addons/ace3/pages/ace-config-3-0-options-tables/
 function _ElvUI_Animations:InsertOptions()
 	E.Options.args.ElvUI_Animations = {
@@ -652,11 +1046,11 @@ function _ElvUI_Animations:InsertOptions()
 		set = 
 			function(info, value)
 				_DataBase.CurrentTabs = _DataBase.CurrentTabs + 1
-				_DataBase["Custom_Tab".._DataBase.CurrentTabs] = addonTable:Copy(DEFAULT)
+				_DataBase["Custom_Tab".._DataBase.CurrentTabs] = _System:Copy(DEFAULT)
 
-				E.db.ElvUI_Animations[_DataBase.CurrentTabs].Config = {
+				_DataBase["Custom_Tab".._DataBase.CurrentTabs].Config = {
 					Order = _DataBase.CurrentTabs,			-- The name of the key in the table. ex: E.Options.args.ElvUI_Animations.args[%THIS_VALUE_HERE%]
-					Frame = { "Enter Frames Here",				-- The name of the frames affected by this tabs settings
+					Frame = { "Enter Frames Here",			-- The name of the frames affected by this tabs settings
 						Fade = { }, 
 					},									
 					Name = value,							-- The name displayed to the user for this tab
@@ -664,7 +1058,8 @@ function _ElvUI_Animations:InsertOptions()
 						Fade = {  }, 
 					},								
 				}
-
+				
+				_Options["Custom_Tab".._DataBase.CurrentTabs] = { }
 				--E:RefreshGUI()
 			end,
 	}
@@ -697,418 +1092,27 @@ function _ElvUI_Animations:InsertOptions()
 				E:StaticPopup_Show("DeleteTab")
 			end,
 	}
-	print(E.db.ElvUI_Animations, _DataBase)
+	
 	for k, v in pairs(_DataBase) do
-		if string.find(k, "_Tab") and k ~= "Default_Tab" then
-			E.Options.args.ElvUI_Animations.args.TabSelection.values[k] = _DataBase[k].Config.Name
-		end
-	end
-
-	for i = 1, 0 do					
-		E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName] = {
-			order = i + 10 + #E.db.ElvUI_Animations,
-			type = "group",
-			name = E.db.ElvUI_Animations[i].Config.Name,
-			childGroups = "tab",	
-			args = {
-				Combat = {
-					order = 1,
-					type = "group",
-					name = "Combat Fade Options",
-					args = {
-						Alpha = {
-							order = 5,
-							type = "group",
-							name = "Alpha Options",
-							guiInline = true,
-							args = {
-								In = {
-									order = 1,
-									type = "range",
-									name = "In Combat Alpha",
-									desc = "What alpha the frame should be set to when in combat",
-									min = 0,
-									max = 1,
-									step = 0.01,
-									get = 
-										function(info)
-											return E.db.ElvUI_Animations[i].Combat.Alpha.In
-										end,
-									set = 
-										function(info, value)
-											E.db.ElvUI_Animations[i].Combat.Alpha.In = value
-										end,
-								},
-								Out = {
-									order = 2,
-									type = "range",
-									name = "Out of Combat Alpha",
-									desc = "What alpha the frame should be set to when not in combat",
-									min = 0,
-									max = 1,
-									step = 0.01,
-									get = 
-										function(info)
-											return E.db.ElvUI_Animations[i].Combat.Alpha.Out
-										end,
-									set = 
-										function(info, value)
-											E.db.ElvUI_Animations[i].Combat.Alpha.Out = value
-										end,
-								},
-							},
-						},
-						Duration = {
-							order = 6,
-							type = "group",
-							name = "Duration Options",
-							guiInline = true,
-							args = {
-								In = {
-									order = 1,
-									type = "range",
-									name = "To In Combat Alpha",
-									desc = "How long it should take to fade to the in combat alpha",
-									min = 0,
-									max = 5,
-									step = 0.1,
-									get = 
-										function(info)
-											return E.db.ElvUI_Animations[i].Combat.Duration.In
-										end,
-									set = 
-										function(info, value)
-											E.db.ElvUI_Animations[i].Combat.Duration.In = value
-										end,
-								},
-								Out = {
-									order = 2,
-									type = "range",
-									name = "To Out of Combat Alpha",
-									desc = "How long it should take to fade to the out of combat alpha",
-									min = 0,
-									max = 5,
-									step = 0.1,
-									get = 
-										function(info)
-											return E.db.ElvUI_Animations[i].Combat.Duration.Out
-										end,
-									set = 
-										function(info, value)
-											E.db.ElvUI_Animations[i].Combat.Duration.Out = value
-										end,
-								},									
-							},
-						},
-						Smoothing = {
-							order = 7,
-							type = "group",
-							name = "Smoothing Options",
-							guiInline = true,
-							args = {
-								In = {
-									order = 1,
-									type = "select",
-									name = "In Combat Smoothing",
-									desc = "The type of smoothing to use when fading to the in combat alpha",
-									values = {
-										NONE = "None",
-										IN = "In",
-										OUT = "Out",
-										IN_OUT = "In/Out",
-									},
-									get = 
-										function(info)
-											return E.db.ElvUI_Animations[i].Combat.Smoothing.In
-										end,
-									set = 
-										function(info, value)
-											E.db.ElvUI_Animations[i].Combat.Smoothing.In = value
-										end,
-								},
-								Out = {
-									order = 1,
-									type = "select",
-									name = "Out of Combat Smoothing",
-									desc = "The type of smoothing to use when fading to the out of combat alpha",
-									values = {
-										NONE = "None",
-										IN = "In",
-										OUT = "Out",
-										IN_OUT = "In/Out",
-									},
-									get = 
-										function(info)
-											return E.db.ElvUI_Animations[i].Combat.Smoothing.Out
-										end,
-									set = 
-										function(info, value)
-											E.db.ElvUI_Animations[i].Combat.Smoothing.Out = value
-										end,
-								},
-							},
-						},
-						Mouse = {
-							order = -1,
-							type = "group",
-							name = "Mouse Options",
-							guiInline = true,
-							args = {
-								Enabled = {
-									order = 1,
-									type = "toggle",
-									name = "Enable Mouse-Over",
-									desc = "Whether or not to fade the frame based on current mouse focus",
-									get = 
-										function(info)
-											return E.db.ElvUI_Animations[i].Combat.Mouse.Enabled
-										end,
-									set = 
-										function(info, value)
-											E.db.ElvUI_Animations[i].Combat.Mouse.Enabled = value
-											Update(i)	-- We changed a toggle, call our Update function
-										end,
-								},
-								DurationOn = {
-									order = 2,
-									type = "range",
-									name = "To Mouse-Over Alpha",
-									desc = "How long it should take to fade to the mouse-over alpha",
-									min = 0,
-									max = 5,
-									step = 0.1,
-									get = function(info)
-										return E.db.ElvUI_Animations[i].Combat.Mouse.Duration.On
-									end,
-									set = function(info, value)
-										E.db.ElvUI_Animations[i].Combat.Mouse.Duration.On = value
-									end,
-								},
-								DurationOff = {
-									order = 3,
-									type = "range",
-									name = "From Mouse-Over Alpha",
-									desc = "How long it should take to fade back to it's original alpha",
-									min = 0,
-									max = 5,
-									step = 0.1,
-									get = function(info)
-										return E.db.ElvUI_Animations[i].Combat.Mouse.Duration.Off
-									end,
-									set = function(info, value)
-										E.db.ElvUI_Animations[i].Combat.Mouse.Duration.Off = value
-									end,
-								},
-								Alpha = {
-									order = 4,
-									type = "range",
-									name = "Mouse-Over Alpha",
-									desc = "What alpha to set the frame to when moused over",
-									min = 0,
-									max = 1,
-									step = 0.01,
-									get = function(info)
-										return E.db.ElvUI_Animations[i].Combat.Mouse.Alpha
-									end,
-									set = function(info, value)
-										E.db.ElvUI_Animations[i].Combat.Mouse.Alpha = value
-									end,
-								},
-							},
-						}
-					},
-				},
-					
-				Animation = {
-					order = 3,
-					type = "group",
-					name = "Animation Options",	
-					args = {
-						General = {
-							order = 5,
-							type = "group",
-							name = "General Options",
-							guiInline = true,
-							args = {
-								StartDelay = {
-									order = 2,
-									type = "range",
-									name = "Animation Start Delay",
-									desc = "How long to wait until the animation should start",
-									min = 0,
-									max = 5,
-									step = 0.1,
-									get = 
-										function(info)
-											return E.db.ElvUI_Animations[i].Animation.Default.Delay.Start
-										end,
-									set = 
-										function(info, value)
-											E.db.ElvUI_Animations[i].Animation.Default.Delay.Start = value
-										end,
-								},
-								EndDelay = {
-									order = 3,
-									type = "range",
-									name = "Animation End Delay",
-									desc = "How long to wait after the animation has stopped until it should be considered finished",
-									min = 0,
-									max = 5,
-									step = 0.1,
-									get = 
-										function(info)
-											return E.db.ElvUI_Animations[i].Animation.Default.Delay.End
-										end,
-									set = 
-										function(info, value)
-											E.db.ElvUI_Animations[i].Animation.Default.Delay.End = value
-										end,
-								},
-								Duration = {
-									order = 4,
-									type = "range",
-									name = "Animation Duration",
-									desc = "How long the animations will take",
-									min = 0,
-									max = 5,
-									step = 0.1,
-									get = 
-										function(info)
-											return E.db.ElvUI_Animations[i].Animation.Default.Duration
-										end,
-									set = 
-										function(info, value)
-											E.db.ElvUI_Animations[i].Animation.Default.Duration = value
-										end,
-								},
-							},
-						},	
-						Division = {
-							order = 6,
-							type = "header",
-							name = "Animations",
-						},				
-					},
-				},
-				TabConfig = {
-					order = -1,
-					type = "group",
-					name = "Configure",
-					args = { },
-				},
-			},
-		}
-
-		for j = 1, #E.db.ElvUI_Animations[i].Animation do
-			Key = "Animation_"..j 
-			E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName].args.Animation.args[Key] = CreateAnimationPage(i, j, j + 5)
-		end
-				
-		if i == 1 then
-			E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName].args.Animation.args.TestAll = {
-				order = 1,
-				type = "execute",
-				name = "Test All!",
-				desc = "Test all the animations at the same time",
-				func = 
-					function()
-						ElvUI_Animations:ReloadCombatAnimationGroup()
-
-						for i = 2, #E.db.ElvUI_Animations do
-							ElvUI_Animations:AttemptAnimation(i)
-						end
-					end,
-			}			
-			for j = 2, #E.db.ElvUI_Animations do
-				E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName].args.TabConfig.args[E.db.ElvUI_Animations[j].Config.KeyName.."Config"] = CreateConfigTab(j)
-			end		
-		else
-			E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName].args.TabConfig.args[E.db.ElvUI_Animations[i].Config.KeyName.."Config"] = CreateConfigTab(i)
-
-			E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName].args.Combat.args.Enabled = {
-				order = 1,
-				type = "toggle",
-				name = "Enabled",
-				desc = "Whether or not to fade the frame based on combat flags",
-				get = 
-					function(info)
-						return E.db.ElvUI_Animations[i].Combat.Enabled
-					end,
-				set = 
-					function(info, value)
-						E.db.ElvUI_Animations[i].Combat.Enabled = value
-						Update(i)	-- We changed a toggle, call our Update function
-					end,
-			}
-			E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName].args.Combat.args.UseDefaults = {
-				order = 2,
-				type = "toggle",
-				name = "Use Defaults",
-				desc = "Whether or not to use the default values or set up individual values for this frame",
-				get = 
-					function(info)
-						return E.db.ElvUI_Animations[i].Combat.UseDefaults
-					end,
-				set = 
-					function(info, value)
-						E.db.ElvUI_Animations[i].Combat.UseDefaults = value
-						Update(i)	-- We changed a toggle, call our Update function
-					end,
-			}
-			E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName].args.Animation.args.Enabled = {
-				order = 1,
-				type = "toggle",
-				name = "Enabled",
-				desc = "Whether or not to animate this Frame",
-				get = 
-					function(info)
-						return E.db.ElvUI_Animations[i].Animation.Enabled
-					end,
-				set = 
-					function(info, value)
-						E.db.ElvUI_Animations[i].Animation.Enabled = value
-						Update(i)	-- We changed a toggle, call our Update function
-					end,
-			}
-			E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName].args.Animation.args.TestAll = {
-				order = 2,
-				type = "execute",
-				name = "Test All!",
-				desc = "Test all the animations at the same time",
-				func = 
-					function()
-						ElvUI_Animations:ReloadCombatAnimationGroup()
-
-						ElvUI_Animations:AttemptAnimation(i)
-					end,
-			}
-			E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName].args.Animation.args.General.args.UseDefaults = {
-				order = 1,
-				type = "toggle",
-				name = "Use Defaults",
-				desc = "Whether or not to use the default values or set up individual values for this frame",
-				get = 
-					function(info)
-						return E.db.ElvUI_Animations[i].Animation.UseDefaults
-					end,
-				set = 
-					function(info, value)
-						E.db.ElvUI_Animations[i].Animation.UseDefaults = value
-						Update(i)	-- We changed a toggle, call our Update function
-					end,
-			}
-		end
-		Update(i)
-		
-		local GoobyPls = false
-		E.db.ElvUI_Animations[i].Config.Error = { }
-
-		for j = 1, #E.db.ElvUI_Animations[i].Config.Frame do
-			if GetClickFrame(E.db.ElvUI_Animations[i].Config.Frame[j]) == nil  and i ~= 1 then
-				E.db.ElvUI_Animations[i].Config.Error[j] = true
-				GoobyPls = true
+		if string.find(k, "_Tab") then 
+			if k ~= "Default_Tab" then
+				_Options.TabSelection.values[k] = _DataBase[k].Config.Name
 			end
+			_Options[k] = CreateTreeElement(k)
 		end
+	end					
+		
+--		Update(i)
+		
+--		local GoobyPls = false
+--		E.db.ElvUI_Animations[i].Config.Error = { }
+
+--		for j = 1, #E.db.ElvUI_Animations[i].Config.Frame do
+--			if GetClickFrame(E.db.ElvUI_Animations[i].Config.Frame[j]) == nil  and i ~= 1 then
+--				E.db.ElvUI_Animations[i].Config.Error[j] = true
+--				GoobyPls = true
+--			end
+--		end
 
 --		if GoobyPls then
 --			if i <= #P.ElvUI_Animations and E.db.ElvUI_Animations[i].Config.Frame ~= P.ElvUI_Animations[i].Config.Frame then
@@ -1126,7 +1130,6 @@ function _ElvUI_Animations:InsertOptions()
 --			E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName].args.Animation.disabled = false
 --			E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName].args.Combat.disabled = false
 --		end
-	end
 end
 
 -- Setup Restore Defaults confirmation popup
@@ -1159,43 +1162,94 @@ E.PopupDialogs.DeleteTab = {
 	preferredIndex = 3,
 }
 
-function _AddonTable:CreateAnimationGroups()
+--region Animation Group Functions and Alias
+--region Animation Group
+function _AddonTable._NotKept.Animations:CreateAnimationGroups()
 	for k, v in pairs(_DataBase) do
 		if string.find(k, "_Tab") then
-			local AddonTable = _AddonTable.Animations[k]
+			local Animations = _AddonTable._NotKept.Animations[k]
 			local DataBase = _DataBase[k]
-		
+				
+			--Animations.AnimationGroup = { }
+			--Animations.Animation = { }
 			for i = 1, #DataBase.Config.Frame do
 				local Frame = GetClickFrame(DataBase.Config.Frame[i])
 			
-				AddonTable.AnimationGroup[i] = Frame:CreateAnimationGroup()
+				Animations.AnimationGroup[i] = Frame:CreateAnimationGroup()
 				for kk, vv in pairs(DataBase.Animation) do
 					if string.find(kk, "_Tab") then
-						AddonTable.Animation[k.."__"..kk] = AddonTable.AnimationGroup[i]:CreateAnimation(DataBase.Animation[kk].AnimationName)
+						Animations.Animation[k.."__"..kk] = Animations.AnimationGroup[i]:CreateAnimation(DataBase.Animation[kk].AnimationName)
 					end
 				end
 			end
 		end
 	end
 end
-
-function _AddonTable:UpdateAnimationGroups(KeyName)
-	local AddonTable = _AddonTable.Animations[KeyName]
+function _AddonTable._NotKept.Animations:UpdateAnimationGroups(KeyName)
+	local Animations = _AddonTable._NotKept.Animations[KeyName]
 	local DataBase = _DataBase[KeyName]
 		
 	for i = 1, #DataBase.Config.Frame do
 		local Frame = GetClickFrame(DataBase.Config.Frame[i])
 			
-		AddonTable.AnimationGroup[i] = Frame:CreateAnimationGroup()
+		Animations.AnimationGroup[i] = Frame:CreateAnimationGroup()
 		for kk, vv in pairs(DataBase.Animation) do
 			if string.find(kk, "_Tab") then
-				AddonTable.Animation[KeyName.."__"..kk] = AddonTable.AnimationGroup[i]:CreateAnimation(DataBase.Animation[kk].AnimationName)
+				Animations.Animation[KeyName.."__"..kk] = Animations.AnimationGroup[i]:CreateAnimation(DataBase.Animation[kk].AnimationName)
 			end
 		end
 	end
 end
+--endregion
 
-E:RegisterModule(_ElvUI_Animations:GetName()) -- Register the module with ElvUI. ElvUI will now call _ElvUI_Animations:Initialize() when ElvUI is ready to load our plugin.
+--region Combat Animation Group
+function _AddonTable._NotKept.CombatAnimations:CreateAnimationGroups()
+	for k, v in pairs(_DataBase) do
+		if string.find(k, "_Tab") then
+			local Animations = _AddonTable._NotKept.CombatAnimations[k]
+			local DataBase = _DataBase[k]
+			
+			--Animations.AnimationGroup = { }
+			--Animations.Animation = { }
+			for i = 1, #DataBase.Config.Frame do
+				local Frame = GetClickFrame(DataBase.Config.Frame[i])
+			
+				Animations.In.AnimationGroup[i] = Frame:CreateAnimationGroup()
+				Animations.In.Animation[i] = Animations.In.AnimationGroup[i]:CreateAnimation("Alpha")
+				
+				Animations.Out.AnimationGroup[i] = Frame:CreateAnimationGroup()
+				Animations.Out.Animation[i] = Animations.Out.AnimationGroup[i]:CreateAnimation("Alpha")
+			end
+		end
+	end
+end
+function _AddonTable._NotKept.CombatAnimations:UpdateAnimationGroups(KeyName)
+	local Animations = _AddonTable._NotKept.CombatAnimations[KeyName]
+	local DataBase = _DataBase[KeyName]
+		
+	for i = 1, #DataBase.Config.Frame do
+		local Frame = GetClickFrame(DataBase.Config.Frame[i])
+			
+		Animations.In.AnimationGroup[i] = Frame:CreateAnimationGroup()
+		Animations.In.Animation[i] = Animations.In.AnimationGroup[i]:CreateAnimation("Alpha")
+				
+		Animations.Out.AnimationGroup[i] = Frame:CreateAnimationGroup()
+		Animations.Out.Animation[i] = Animations.Out.AnimationGroup[i]:CreateAnimation("Alpha")
+	end
+end
+--endregion
 
-_AddonTable.UpdateAnimGroups = _AddonTable.UpdateAnimationGroups
-_AddonTable.CreateAnimGroups = _AddonTable.CreateAnimationGroups
+_AddonTable._NotKept.Animations.UpdateAnimGroups = _AddonTable._NotKept.Animations.UpdateAnimationGroups
+_AddonTable._NotKept.Animations.CreateAnimGroups = _AddonTable._NotKept.Animations.CreateAnimationGroups
+
+_AddonTable._NotKept.CombatAnimations.UpdateAnimGroups = _AddonTable._NotKept.CombatAnimations.UpdateAnimationGroups
+_AddonTable._NotKept.CombatAnimations.CreateAnimGroups = _AddonTable._NotKept.CombatAnimations.CreateAnimationGroups
+--endregion
+
+function _ElvUI_Animations:Initialize()
+	-- Register plugin so options are properly inserted when config is loaded
+	_EP:RegisterPlugin(_AddonName, _ElvUI_Animations.InsertOptions)
+end
+---------------------------------------------------------------------------------------------------------------------------------------
+-- End of Config.lua
+---------------------------------------------------------------------------------------------------------------------------------------

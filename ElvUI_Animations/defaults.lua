@@ -9,14 +9,23 @@
 
 local E, L, V, P, G = unpack(ElvUI);	-- Import: Engine, Locales, PrivateDB, ProfileDB, GlobalDB
 
-local _DefaultProfile = P.ElvUI_Animations
-
-local _ElvUI_Animations = E:NewModule('ElvUI_Animations', 'AceHook-3.0', 'AceEvent-3.0', 'AceTimer-3.0');	-- Create a plugin within ElvUI and adopt AceHook-3.0, AceEvent-3.0 and AceTimer-3.0. We can make use of these later.
-
 local _AddonName, _AddonTable = ... -- See http://www.wowinterface.com/forums/showthread.php?t=51502&p=304704&postcount=2
 
 
-function _AddonTable:Copy(Table)
+_AddonTable._System = { }
+local _System = _AddonTable._System
+
+--region Setting up system functions
+function _AddonTable._System:GetKey(Table, Value)
+	for k, v in pairs(Table) do
+		if (v == Value) then
+			return k
+		end
+	end
+	
+	return nil -- If the passed value was not found
+end
+function _AddonTable._System:Copy(Table)
 	if type(Table) ~= "table" then return Table end
 
 	local Meta = getmetatable(Table)
@@ -29,11 +38,12 @@ function _AddonTable:Copy(Table)
 
 	return Target
 end
+--endregion
 
 --region Setting default values to parse
 _AddonTable._Defaults = {
-	_Tabs = {
-		_Names = {
+	Tab = {
+		Names = {
 			"Default_Tab", 
 			"Player_Tab", "Target_Tab",
 			"Party_Tab", "Raid_Tab", "Raid40_Tab",
@@ -45,7 +55,7 @@ _AddonTable._Defaults = {
 			"TopPanel_Tab", "BottomPanel_Tab",
 		},
 		--region Defaults Table
-		_Default = {								-- The default values for a configuration tab
+		Default = {								-- The default values for a configuration tab
 
 			Animation = {							-- The settings for animations played after loading screens and afk
 				Enabled = true,						-- If this frame should be animated
@@ -153,19 +163,19 @@ _AddonTable._Defaults = {
 		--endregion
 			},
 	
-			Combat = {							-- Settings relating to combat fading/alpha animation
-				Enabled = true,					-- If this frame should be animated
+			Combat = {						-- Settings relating to combat fading/alpha animation
+				Enabled = true,				-- If this frame should be animated
 		
-				UseDefaults = true,				-- If the default tab settings should be used instead of this one
+				UseDefaults = true,			-- If the default tab settings should be used instead of this one
 
 				Duration = {
-					In = 0.3,					-- Time to animate for in combat flag
-					Out = 1,					-- Time to animate for out of combat flag
+					In = 0.3,				-- Time to animate for in combat flag
+					Out = 1,				-- Time to animate for out of combat flag
 				},
 
 				Alpha = {
-					In = 0.25,
-					Out = 0.9,
+					In = 0.25,				-- In combat alpha
+					Out = 0.9,				-- Out of combat alpha
 				},
 		
 				Smoothing = {
@@ -173,7 +183,7 @@ _AddonTable._Defaults = {
 					Out = "IN",
 				},
 		
-				Mouse = {						-- Settings related to mouse-over fading
+				Mouse = {					-- Settings related to mouse-over fading
 					Enabled = true,
 		
 					Duration = {
@@ -185,7 +195,7 @@ _AddonTable._Defaults = {
 				},
 			},
 
-			Config = { },						-- This is created but not populated because we don't know what 'Config.Frame', 'Config.Name' ect.. could defaulted to
+			Config = { },					-- This is created but not populated because we don't know what 'Config.Frame', 'Config.Name' ect.. could defaulted to
 		},
 		--endregion
 	},
@@ -199,7 +209,7 @@ P.ElvUI_Animations = { CurrentTabs = 19, Animate = true, AFK = true, Combat = tr
 
 -- Created the defaults table for the addon. ElvUI does some magic here, somehow it ends up being named the same
 for i = 1, #_AddonTable._Defaults._Tabs._Names do
-	P.ElvUI_Animations[_AddonTable._Defaults._Tabs._Names[i]] = _AddonTable:Copy(_AddonTable._Defaults._Tabs._Default)
+	P.ElvUI_Animations[_AddonTable._Defaults.Tabs.Names[i]] = _System:Copy(_AddonTable._Defaults.Tab.Default)
 end
 
 P.ElvUI_Animations['Default_Tab'].Config = {
@@ -351,17 +361,28 @@ P.ElvUI_Animations['BottomPanel_Tab'].Config = {
 }
 --endregion
 
+--region Setting up loose variables that don't need to carry over per session
+_AddonTable._NotKept = { }
+
 --region Setting up Animation Groups
-_AddonTable.Animations = { }
-for k, v in pairs(_AddonTable._Defaults._Tabs._Names) do
-	local AddonTable = _AddonTable.Animations
+_AddonTable._NotKept.Animations = { }
+for k, v in pairs(_AddonTable._Defaults.Tab.Names) do
+	local Animations = _AddonTable._NotKept.Animations
 	
-	AddonTable[k] = { AnimationGroup = { }, Animation = { }, }
+	Animations[k] = { AnimationGroup = { }, Animation = { }, }
+end
+
+_AddonTable._NotKept.CombatAnimations = { }
+for k, v in pairs(_AddonTable._Defaults.Tab.Names) do
+	local Animations = _AddonTable._NotKept.CombatAnimations
+	
+	Animations[k] = { In = { AnimationGroup = { }, Animation = { }, }, Out = { AnimationGroup = { }, Animation = { }, }, }
 end
 --endregion
+_AddonTable._NotKept.ShouldAppear = false
+_AddonTable._NotKept.TabToDelete = ""
 
---region Setting up settings that don't need to carry over per session
-_AddonTable.TabToDelete = ""
+_AddonTable._NotKept.CombatAnimations.AlphaBuildUp = { }		-- For some reason adding less than 0.01 alpha to a frame seems to cause floating point error where it isn't added to the overall alpha of the frame
 --endregion
 ---------------------------------------------------------------------------------------------------------------------------------------
 -- End of defaults.lua

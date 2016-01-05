@@ -2,7 +2,7 @@
 ## Title: |cff1784d1ElvUI|r |cff00b3ffAnimations|r
 ## Author: Benjamin Odom
 ## Version: 0.5
-## Notes: This is a beta stage addon to add animations to the base |cff1784d1ElvUI|r
+## Notes: This is a beta stage addon to add animations to the base |cff1784d1ElvUI|r setup
 
 ## RequiredDeps: ElvUI
 
@@ -12,6 +12,6 @@
 
 ElvUI_Animations\enUS.lua
 ElvUI_Animations\defaults.lua
-ElvUI_Animations\Config.lua
 ElvUI_Animations\Cache.lua
+ElvUI_Animations\Config.lua
 ElvUI_Animations\Core.lua
