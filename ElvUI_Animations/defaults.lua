@@ -9,12 +9,15 @@
 
 local E, L, V, P, G = unpack(ElvUI);	-- Import: Engine, Locales, PrivateDB, ProfileDB, GlobalDB
 
+local _DataBase = E.db.ElvUI_Animations
+local _DefaultProfile = P.ElvUI_Animations
+
 local _ElvUI_Animations = E:NewModule('ElvUI_Animations', 'AceHook-3.0', 'AceEvent-3.0', 'AceTimer-3.0');	-- Create a plugin within ElvUI and adopt AceHook-3.0, AceEvent-3.0 and AceTimer-3.0. We can make use of these later.
 
 local _AddonName, _AddonTable = ... -- See http://www.wowinterface.com/forums/showthread.php?t=51502&p=304704&postcount=2
 
 
-local function _AddonTable:Copy(Table)
+function _AddonTable:Copy(Table)
 	if type(Table) ~= "table" then return Table end
 
 	local Meta = getmetatable(Table)
@@ -197,7 +200,7 @@ _AddonTable._Defaults = {
 P.ElvUI_Animations = { Animate = true, AFK = true, Combat = true, Lag = true, { }, }
 
 -- Created the defaults table for the addon. ElvUI does some magic here, somehow it ends up being named the same
-for k, v in pairs(addonTable._Defaults._Tabs._Names) do
+for k, v in pairs(_AddonTable._Defaults._Tabs._Names) do
 	P.ElvUI_Animations[k] = addonTable:Copy(addonTable._Defaults._Tabs._Default)
 end
 
@@ -351,8 +354,33 @@ P.ElvUI_Animations['BottomPanel_Tab'].Config = {
 --endregion
 
 --region Setting up Animation Groups
-
+_AddonTable.Animations = { }
+for k, v in pairs(_AddonTable._Defaults._Tabs._Names) do
+	local Animations = _AddonTable.Animations
+	
+	Animations[k] = { AnimationGroup = { }, Animation = { }, }
+end
 --endregion
+
+function _AddonTable:CreateAnimations()
+	for k, v in pairs(_DataBase) do
+		local Animations = _AddonTable.Animations[k]
+		local DataBase = _DataBase[k]
+		
+		local Config = DataBase.Config
+		for i = 1, #Config.Frame do
+			local Frame = GetClickFrame(Config.Frame[i])
+			
+			Animations.AnimationGroup[i] = Frame:CreateAnimationGroup()
+			for kk, vv in pairs(DataBase.Animation) do
+				if string.find(k, "_Tab") then
+					Animations.Animation[kk] = Animation.AnimationGroup:CreateAnimation(DataBase.Animation[kk].AnimationName)
+				end
+			end
+		end
+	end
+end
+
 ---------------------------------------------------------------------------------------------------------------------------------------
 -- End of Defaults
 ---------------------------------------------------------------------------------------------------------------------------------------

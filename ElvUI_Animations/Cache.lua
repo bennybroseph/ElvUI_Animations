@@ -9,8 +9,8 @@
 ---------------------------------------------------
 
 local E, L, V, P, G = unpack(ElvUI); -- Import: Engine, Locales, PrivateDB, ProfileDB, GlobalDB
+
 local _DataBase = E.db.ElvUI_Animations
-local _
 local _Options = E.Options.args.ElvUI_Animations.args
 
 local _ElvUI_Animations = E:GetModule('_ElvUI_Animations', 'AceHook-3.0', 'AceEvent-3.0', 'AceTimer-3.0'); -- Create a plugin within ElvUI and adopt AceHook-3.0, AceEvent-3.0 and AceTimer-3.0. We can make use of these later.
@@ -26,9 +26,9 @@ local function CacheAnimationTabOption(KeyName, AnimationKeyName)
 	if type(KeyName) ~= "string" then error("'CacheAnimationTabOption' expects a string as a parameter 'KeyName'", 2) return end
 	if type(AnimKey) ~= "string" then error("'CacheAnimationTabOption' expects a string as a parameter 'AnimationKeyName'", 2) return end
 	
-	local Cache = _Cache[KeyName].Animation				-- The cache should always
+	local Cache = _Cache[KeyName].Animation				-- The local 'Cache' should always point to the relevant animation configuration
 	
-	local DataBase = _DataBase[KeyName].Animation
+	local DataBase = _DataBase[KeyName].Animation		-- The local 'DataBase' should always point to the relevant animation database
 	if DataBase.UseDefaults then
 		DataBase = _DataBase['Defaults'].Animation
 	end
@@ -38,7 +38,8 @@ local function CacheAnimationTabOption(KeyName, AnimationKeyName)
 		Duration = DataBase[AnimKey].CustomDuration
 	end
 	
-	Cache[AnimKey]
+	Cache[AnimKey] = DataBase[AnimKey]		-- After determining which settings to use, cache the proper settings
+	Cache[AnimKey].Duration = Duration		-- Except 'Duration' which does not exist, but will be used when parsing the animation cache 
 end
 
 addonTable.CacheAnim = CacheAnimationTabOption
