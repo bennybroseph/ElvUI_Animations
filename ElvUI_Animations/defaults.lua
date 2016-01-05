@@ -3,13 +3,12 @@
 -- Author:			Benjamin Odom
 -- Date Created:	01-04-2016
 --
--- Brief:	Essentially the main.cpp
---	Holds all of the add-ons basic callbacks 	
+-- Brief:	Sets up all variables to be used upon 
+--	launching the game 	
 ---------------------------------------------------
 
 local E, L, V, P, G = unpack(ElvUI);	-- Import: Engine, Locales, PrivateDB, ProfileDB, GlobalDB
 
-local _DataBase = E.db.ElvUI_Animations
 local _DefaultProfile = P.ElvUI_Animations
 
 local _ElvUI_Animations = E:NewModule('ElvUI_Animations', 'AceHook-3.0', 'AceEvent-3.0', 'AceTimer-3.0');	-- Create a plugin within ElvUI and adopt AceHook-3.0, AceEvent-3.0 and AceTimer-3.0. We can make use of these later.
@@ -54,7 +53,7 @@ _AddonTable._Defaults = {
 				UseDefaults = true,					-- If the default tab settings should be used instead of this one
 
 				DefaultDuration = {					-- Default timing settings for the animation as a whole. Not to be confused with the default tab 
-					Duration = 1.5,
+					Time = 1.5,
 		
 					Delay = {
 						Start = 0,
@@ -74,7 +73,7 @@ _AddonTable._Defaults = {
 					CustomDuration = {
 						Enabled = false,
 
-						Duration = 0.3,
+						Time = 0.3,
 
 						Delay = {
 							Start = 0,
@@ -82,9 +81,8 @@ _AddonTable._Defaults = {
 						},
 					},
 
-					AnimationSpecific = {
-						Start = 0,
-						End = 0.9,
+					Alpha = {
+						Change = 0.9,
 					},
 
 					Smoothing = "IN",
@@ -197,11 +195,11 @@ _AddonTable._Defaults = {
 --region Setting up default profile variables
 
 -- Set up the table, but leave it empty
-P.ElvUI_Animations = { Animate = true, AFK = true, Combat = true, Lag = true, { }, }
+P.ElvUI_Animations = { CurrentTabs = 19, Animate = true, AFK = true, Combat = true, Lag = true, { }, }
 
 -- Created the defaults table for the addon. ElvUI does some magic here, somehow it ends up being named the same
-for k, v in pairs(_AddonTable._Defaults._Tabs._Names) do
-	P.ElvUI_Animations[k] = addonTable:Copy(addonTable._Defaults._Tabs._Default)
+for i = 1, #_AddonTable._Defaults._Tabs._Names do
+	P.ElvUI_Animations[_AddonTable._Defaults._Tabs._Names[i]] = _AddonTable:Copy(_AddonTable._Defaults._Tabs._Default)
 end
 
 P.ElvUI_Animations['Default_Tab'].Config = {
@@ -318,13 +316,13 @@ P.ElvUI_Animations['Buffs_Tab'].Config = {
 	},
 }
 
-for i = 12, 17 do
+for i = 1, 6 do
 	P.ElvUI_Animations['Bar'..i..'_Tab'].Config = {
-		KeyName = "Bar_" .. i - AfterUF + 1,
-		Frame = { "ElvUI_Bar"..i - AfterUF + 1, 
+		Order = 11 + i,
+		Frame = { "ElvUI_Bar"..i, 
 			Fade = { }, 
 		},
-		Name = L['Bar'].." ".. i - AfterUF + 1,
+		Name = L['Bar'].." ".. i,
 		Error = { 
 			Fade = {  }, 
 		},
@@ -356,31 +354,15 @@ P.ElvUI_Animations['BottomPanel_Tab'].Config = {
 --region Setting up Animation Groups
 _AddonTable.Animations = { }
 for k, v in pairs(_AddonTable._Defaults._Tabs._Names) do
-	local Animations = _AddonTable.Animations
+	local AddonTable = _AddonTable.Animations
 	
-	Animations[k] = { AnimationGroup = { }, Animation = { }, }
+	AddonTable[k] = { AnimationGroup = { }, Animation = { }, }
 end
 --endregion
 
-function _AddonTable:CreateAnimations()
-	for k, v in pairs(_DataBase) do
-		local Animations = _AddonTable.Animations[k]
-		local DataBase = _DataBase[k]
-		
-		local Config = DataBase.Config
-		for i = 1, #Config.Frame do
-			local Frame = GetClickFrame(Config.Frame[i])
-			
-			Animations.AnimationGroup[i] = Frame:CreateAnimationGroup()
-			for kk, vv in pairs(DataBase.Animation) do
-				if string.find(k, "_Tab") then
-					Animations.Animation[kk] = Animation.AnimationGroup:CreateAnimation(DataBase.Animation[kk].AnimationName)
-				end
-			end
-		end
-	end
-end
-
+--region Setting up settings that don't need to carry over per session
+_AddonTable.TabToDelete = ""
+--endregion
 ---------------------------------------------------------------------------------------------------------------------------------------
--- End of Defaults
+-- End of defaults.lua
 ---------------------------------------------------------------------------------------------------------------------------------------

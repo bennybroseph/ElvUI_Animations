@@ -9,7 +9,7 @@
 
 local E, L, V, P, G = unpack(ElvUI); -- Import: Engine, Locales, PrivateDB, ProfileDB, GlobalDB
 
-local _ElvUI_Animations = E:GetModule('_ElvUI_Animations', 'AceHook-3.0', 'AceEvent-3.0', 'AceTimer-3.0'); -- Create a plugin within ElvUI and adopt AceHook-3.0, AceEvent-3.0 and AceTimer-3.0. We can make use of these later.
+local _ElvUI_Animations = E:GetModule('ElvUI_Animations', 'AceHook-3.0', 'AceEvent-3.0', 'AceTimer-3.0'); -- Create a plugin within ElvUI and adopt AceHook-3.0, AceEvent-3.0 and AceTimer-3.0. We can make use of these later.
 _ElvUI_Animations.version = GetAddOnMetadata("ElvUI_Animations", "Version")
 
 local _EP = LibStub("LibElvUIPlugin-1.0") -- We can use this to automatically insert our GUI tables when ElvUI_Config is loaded.
@@ -22,395 +22,395 @@ local MyUIParent
 local PrevFocusFrame = nil
 local InCombat = false
 
-function ElvUI_Animations:Appear(Index)
-	if E.db.ElvUI_Animations[Index].Animation.Enabled then
-		--ElvUI_Animations:AttemptTranslate(Index)
-		--ElvUI_Animations:AttemptFade(Index)		
-	end
-end
+--function ElvUI_Animations:Appear(Index)
+--	if E.db.ElvUI_Animations[Index].Animation.Enabled then
+--		--ElvUI_Animations:AttemptTranslate(Index)
+--		--ElvUI_Animations:AttemptFade(Index)		
+--	end
+--end
 
-function ElvUI_Animations:AttemptAnimation(Index)
-	local DataBase = E.db.ElvUI_Animations[Index].Animation
-	
-	local Alpha = {
-		Index = 0,
-	}
-	local Trans = {
-		Index = 0,
-	}
+--function ElvUI_Animations:AttemptAnimation(Index)
+--	local DataBase = E.db.ElvUI_Animations[Index].Animation
 
-	for i = 1, #DataBase do
-		if DataBase[i].AnimationName == "Alpha" and Alpha.Index ~= DataBase[i].Order then
-			ElvUI_Animations:AttemptFade(Index, i)
-			Alpha.Index = DataBase[i].Order
-		end
-		if DataBase[i].AnimationName == "Translation" and Trans.Index ~= DataBase[i].Order then
-			ElvUI_Animations:AttemptTranslate(Index, i)
-			
-			Trans.Index = DataBase[i].Order
-		end
-	end
-	for i = 1, #E.db.ElvUI_Animations[Index].Config.Frame do
-		if V.ElvUI_Animations.Animation.AnimationGroup[Index][i] ~= nil then
-			V.ElvUI_Animations.Animation.AnimationGroup[Index][i]:Play()
-		end
-	end
-end
+--	local Alpha = {
+--		Index = 0,
+--	}
+--	local Trans = {
+--		Index = 0,
+--	}
 
-function ElvUI_Animations:AttemptTranslate(Index, AnimIndex)
-	local DataBase = E.db.ElvUI_Animations[Index].Animation
-	
-	if DataBase[AnimIndex].Enabled then
-		if DataBase.UseDefaults then
-			DataBase = E.db.ElvUI_Animations[1].Animation
-		end
+--	for i = 1, #DataBase do
+--		if DataBase[i].AnimationName == "Alpha" and Alpha.Index ~= DataBase[i].Order then
+--			ElvUI_Animations:AttemptFade(Index, i)
+--			Alpha.Index = DataBase[i].Order
+--		end
+--		if DataBase[i].AnimationName == "Translation" and Trans.Index ~= DataBase[i].Order then
+--			ElvUI_Animations:AttemptTranslate(Index, i)
 
-		local Duration = DataBase.Default.Duration
-		local Delay = DataBase.Default.Delay
-		local Order = 1
-	
-		if DataBase[AnimIndex].Duration.Enabled then
-			Duration = DataBase[AnimIndex].Duration.Length
-			Delay = DataBase[AnimIndex].Duration.Delay
-			Order = DataBase[AnimIndex].Order
-		end
-		
-		ElvUI_Animations:Translate(
-			E.db.ElvUI_Animations[Index].Config.Frame, 
-			Index,
-			AnimIndex,
-			Duration, 
-			DataBase[AnimIndex].Offset, 
-			DataBase[AnimIndex].Distance, 
-			DataBase[AnimIndex].Smoothing, 
-			Delay,
-			Order)
-	end	
-end
+--			Trans.Index = DataBase[i].Order
+--		end
+--	end
+--	for i = 1, #E.db.ElvUI_Animations[Index].Config.Frame do
+--		if V.ElvUI_Animations.Animation.AnimationGroup[Index][i] ~= nil then
+--			V.ElvUI_Animations.Animation.AnimationGroup[Index][i]:Play()
+--		end
+--	end
+--end
 
-function ElvUI_Animations:AttemptFade(Index, AnimIndex)
-	local DataBase = E.db.ElvUI_Animations[Index].Animation
+--function ElvUI_Animations:AttemptTranslate(Index, AnimIndex)
+--	local DataBase = E.db.ElvUI_Animations[Index].Animation
 
-	if DataBase[AnimIndex].Enabled then
-		if DataBase.UseDefaults then
-			DataBase = E.db.ElvUI_Animations[1].Animation
-		end
+--	if DataBase[AnimIndex].Enabled then
+--		if DataBase.UseDefaults then
+--			DataBase = E.db.ElvUI_Animations[1].Animation
+--		end
 
-		local Duration = DataBase.Default.Duration
-		local Delay = DataBase.Default.Delay
-		local Order = 1
+--		local Duration = DataBase.Default.Duration
+--		local Delay = DataBase.Default.Delay
+--		local Order = 1
 
-		if DataBase[AnimIndex].Duration.Enabled then
-			Duration = DataBase[AnimIndex].Duration.Length
-			Delay = DataBase[AnimIndex].Duration.Delay
-			Order = DataBase[AnimIndex].Order
-		end
+--		if DataBase[AnimIndex].Duration.Enabled then
+--			Duration = DataBase[AnimIndex].Duration.Length
+--			Delay = DataBase[AnimIndex].Duration.Delay
+--			Order = DataBase[AnimIndex].Order
+--		end
 
-		ElvUI_Animations:Fade(
-			E.db.ElvUI_Animations[Index].Config.Frame,
-			Index,
-			AnimIndex, 
-			Duration, 
-			DataBase[AnimIndex].Alpha,
-			DataBase[AnimIndex].Smoothing, 
-			Delay,
-			Order)
-	end
-end
+--		ElvUI_Animations:Translate(
+--			E.db.ElvUI_Animations[Index].Config.Frame, 
+--			Index,
+--			AnimIndex,
+--			Duration, 
+--			DataBase[AnimIndex].Offset, 
+--			DataBase[AnimIndex].Distance, 
+--			DataBase[AnimIndex].Smoothing, 
+--			Delay,
+--			Order)
+--	end	
+--end
 
-function ElvUI_Animations:Translate(FrameString, Index, AnimIndex, Duration, Offset, Distance, Smoothing, Delay, Order)	
-	local Point, RelativeTo, RelativePoint, PosX, PosY = { }, { }, { }, { }, { }
-	
-	for i = 1, #FrameString do
-		local Frame = GetClickFrame(FrameString[i])
-	
-		if Frame ~= nil and Frame:IsShown() == true then
-			local AnimGroup = V.ElvUI_Animations.Animation.AnimationGroup[Index][i]
-			local TransAnim = V.ElvUI_Animations.Animation.AlphaAnimation[Index][i][AnimIndex]
+--function ElvUI_Animations:AttemptFade(Index, AnimIndex)
+--	local DataBase = E.db.ElvUI_Animations[Index].Animation
 
-			TransAnim:SetDuration(Duration)
+--	if DataBase[AnimIndex].Enabled then
+--		if DataBase.UseDefaults then
+--			DataBase = E.db.ElvUI_Animations[1].Animation
+--		end
 
-			TransAnim:SetStartDelay(Delay.Start)
-			TransAnim:SetEndDelay(Delay.End)
+--		local Duration = DataBase.Default.Duration
+--		local Delay = DataBase.Default.Delay
+--		local Order = 1
 
-			TransAnim:SetOffset(Distance.X, Distance.Y)
+--		if DataBase[AnimIndex].Duration.Enabled then
+--			Duration = DataBase[AnimIndex].Duration.Length
+--			Delay = DataBase[AnimIndex].Duration.Delay
+--			Order = DataBase[AnimIndex].Order
+--		end
 
-			TransAnim:SetSmoothing(Smoothing)
-				
-			TransAnim:SetOrder(Order)			
-			
-			if Order == 1 then 
-				AnimGroup:HookScript("OnPlay",
-					function()
-						local Point, RelativeTo, RelativePoint, PosX, PosY = Frame:GetPoint()
-			
-						Frame:ClearAllPoints()
-						Frame:SetPoint(Point, RelativeTo, RelativePoint, 
-							PosX + Offset.X, 
-							PosY + Offset.Y)
-					end)
+--		ElvUI_Animations:Fade(
+--			E.db.ElvUI_Animations[Index].Config.Frame,
+--			Index,
+--			AnimIndex, 
+--			Duration, 
+--			DataBase[AnimIndex].Alpha,
+--			DataBase[AnimIndex].Smoothing, 
+--			Delay,
+--			Order)
+--	end
+--end
 
-				AnimGroup:HookScript("OnFinished", 
-					function()
-						local Point, RelativeTo, RelativePoint, PosX, PosY = Frame:GetPoint()
-				
-						Frame:ClearAllPoints()
-						Frame:SetPoint(Point, RelativeTo, RelativePoint, 
-							PosX - Offset.X, 
-							PosY - Offset.Y)
-					end)
-			end
-		end
-	end
-end
+--function ElvUI_Animations:Translate(FrameString, Index, AnimIndex, Duration, Offset, Distance, Smoothing, Delay, Order)	
+--	local Point, RelativeTo, RelativePoint, PosX, PosY = { }, { }, { }, { }, { }
 
-function ElvUI_Animations:Fade(FrameString, Index, AnimIndex, Duration, Alpha, Smoothing, Delay, Order)
-	for i = 1, #FrameString do
-		local Frame = GetClickFrame(FrameString[i])
+--	for i = 1, #FrameString do
+--		local Frame = GetClickFrame(FrameString[i])
 
-		if Frame ~= nil and Frame:IsShown() == true then
-			local AnimGroup = V.ElvUI_Animations.Animation.AnimationGroup[Index][i]
-			local AlphaAnim = V.ElvUI_Animations.Animation.AlphaAnimation[Index][i][AnimIndex]
-			
-			AlphaAnim:SetDuration(Duration)
+--		if Frame ~= nil and Frame:IsShown() == true then
+--			local AnimGroup = V.ElvUI_Animations.Animation.AnimationGroup[Index][i]
+--			local TransAnim = V.ElvUI_Animations.Animation.AlphaAnimation[Index][i][AnimIndex]
 
-			AlphaAnim:SetStartDelay(Delay.Start)
-			AlphaAnim:SetEndDelay(Delay.End)
+--			TransAnim:SetDuration(Duration)
 
-			AlphaAnim:SetChange(Alpha.End - Alpha.Start)
+--			TransAnim:SetStartDelay(Delay.Start)
+--			TransAnim:SetEndDelay(Delay.End)
 
-			AlphaAnim:SetSmoothing(Smoothing)
+--			TransAnim:SetOffset(Distance.X, Distance.Y)
 
-			AlphaAnim:SetOrder(Order)
-			
-			if Order == 1 then
-				AnimGroup:HookScript("OnPlay",
-					function()
-						Frame:SetAlpha(Alpha.Start)
-					end)
-				AnimGroup:HookScript("OnFinished",
-					function()
-						Frame:SetAlpha(Alpha.End)
-					end)
-			end	
-		end
-	end
-end
+--			TransAnim:SetSmoothing(Smoothing)
 
-function ElvUI_Animations:AttemptCombatFade(Index, Option)
-	local DataBase = E.db.ElvUI_Animations[Index]
-	
-	if DataBase.Combat.Enabled then	
-		if DataBase.Combat.UseDefaults then
-			DataBase = E.db.ElvUI_Animations[1]
-		end
-		ElvUI_Animations:CombatFade(
-			E.db.ElvUI_Animations[Index].Config.Frame, 
-			Index, 
-			DataBase.Combat.Duration[Option],
-			DataBase.Combat.Alpha[Option],
-			DataBase.Combat.Smoothing[Option])
-	end
-end
+--			TransAnim:SetOrder(Order)			
 
-function ElvUI_Animations:CombatFade(FrameString, Index, Duration, Alpha, Smoothing)
-	for i = 1, #FrameString do
-		local Frame = GetClickFrame(FrameString[i])
+--			if Order == 1 then 
+--				AnimGroup:HookScript("OnPlay",
+--					function()
+--						local Point, RelativeTo, RelativePoint, PosX, PosY = Frame:GetPoint()
 
-		if Frame ~= nil and Frame:IsShown() == true then
-			local AnimGroup = V.ElvUI_Animations.Combat.AnimationGroup[Index][i]
-			local AlphaAnim = V.ElvUI_Animations.Combat.AlphaAnimation[Index][i]
+--						Frame:ClearAllPoints()
+--						Frame:SetPoint(Point, RelativeTo, RelativePoint, 
+--							PosX + Offset.X, 
+--							PosY + Offset.Y)
+--					end)
 
-			AnimGroup:Stop()
+--				AnimGroup:HookScript("OnFinished", 
+--					function()
+--						local Point, RelativeTo, RelativePoint, PosX, PosY = Frame:GetPoint()
 
-			AlphaAnim:SetDuration(Duration)
+--						Frame:ClearAllPoints()
+--						Frame:SetPoint(Point, RelativeTo, RelativePoint, 
+--							PosX - Offset.X, 
+--							PosY - Offset.Y)
+--					end)
+--			end
+--		end
+--	end
+--end
 
-			AlphaAnim:SetChange(Alpha - Frame:GetAlpha())
+--function ElvUI_Animations:Fade(FrameString, Index, AnimIndex, Duration, Alpha, Smoothing, Delay, Order)
+--	for i = 1, #FrameString do
+--		local Frame = GetClickFrame(FrameString[i])
 
-			AlphaAnim:SetSmoothing(Smoothing)
+--		if Frame ~= nil and Frame:IsShown() == true then
+--			local AnimGroup = V.ElvUI_Animations.Animation.AnimationGroup[Index][i]
+--			local AlphaAnim = V.ElvUI_Animations.Animation.AlphaAnimation[Index][i][AnimIndex]
 
-			AnimGroup:Play()
+--			AlphaAnim:SetDuration(Duration)
 
-			AnimGroup:SetScript("OnFinished",
-				function()
-					Frame:SetAlpha(Alpha)
-				end)
-		end
-	end
-end
+--			AlphaAnim:SetStartDelay(Delay.Start)
+--			AlphaAnim:SetEndDelay(Delay.End)
 
-function ElvUI_Animations:AttemptMouseOverFade(Index, DeltaTime, Option)
-	local DataBase = E.db.ElvUI_Animations[Index]
+--			AlphaAnim:SetChange(Alpha.End - Alpha.Start)
 
-	if DataBase.Combat.Enabled then
-		if DataBase.Combat.UseDefaults then
-			DataBase = E.db.ElvUI_Animations[1]
-		end
+--			AlphaAnim:SetSmoothing(Smoothing)
 
-		local Alpha = { Start = DataBase.Combat.Alpha.In, End = DataBase.Combat.Mouse.Alpha }
-		local Duration = DataBase.Combat.Mouse.Duration.On
+--			AlphaAnim:SetOrder(Order)
 
-		if Option ~= "Focus" then
-			Alpha.Start = DataBase.Combat.Mouse.Alpha
-			Duration = DataBase.Combat.Mouse.Duration.Off
-			if not InCombat then
-				Alpha.End = DataBase.Combat.Alpha.Out
-			else
-				Alpha.End = DataBase.Combat.Alpha.In
-			end
-		else
-			if not InCombat then
-				Alpha.Start = DataBase.Combat.Alpha.Out
-			end
-		end
+--			if Order == 1 then
+--				AnimGroup:HookScript("OnPlay",
+--					function()
+--						Frame:SetAlpha(Alpha.Start)
+--					end)
+--				AnimGroup:HookScript("OnFinished",
+--					function()
+--						Frame:SetAlpha(Alpha.End)
+--					end)
+--			end	
+--		end
+--	end
+--end
 
-		local DeltaAlpha = abs(Alpha.End - Alpha.Start)
+--function ElvUI_Animations:AttemptCombatFade(Index, Option)
+--	local DataBase = E.db.ElvUI_Animations[Index]
 
-		if DataBase.Combat.Mouse.Enabled then
-			ElvUI_Animations:MouseOverFade(
-				E.db.ElvUI_Animations[Index].Config.Frame,
-				Index,
-				Alpha.End,
-				(DeltaAlpha/Duration)*DeltaTime)
-		end
-	end
-end
+--	if DataBase.Combat.Enabled then	
+--		if DataBase.Combat.UseDefaults then
+--			DataBase = E.db.ElvUI_Animations[1]
+--		end
+--		ElvUI_Animations:CombatFade(
+--			E.db.ElvUI_Animations[Index].Config.Frame, 
+--			Index, 
+--			DataBase.Combat.Duration[Option],
+--			DataBase.Combat.Alpha[Option],
+--			DataBase.Combat.Smoothing[Option])
+--	end
+--end
 
-function ElvUI_Animations:MouseOverFade(FrameString, Index, Alpha, Speed)	
-	for i = 1, #FrameString do
-		local Frame = GetClickFrame(FrameString[i])
+--function ElvUI_Animations:CombatFade(FrameString, Index, Duration, Alpha, Smoothing)
+--	for i = 1, #FrameString do
+--		local Frame = GetClickFrame(FrameString[i])
 
-		if Frame ~= nil and Frame:IsShown() == true and not V.ElvUI_Animations.Animation.AnimationGroup[Index][i]:IsPlaying() then
-			if abs(V.ElvUI_Animations.AlphaBuildUp[Index][i] + Speed) > 0.01 then				
-				if Frame:GetAlpha() < Alpha then
-					if  Frame:GetAlpha() + Speed + V.ElvUI_Animations.AlphaBuildUp[Index][i] >= Alpha then
-						Frame:SetAlpha(Alpha)
-					else 
-						Frame:SetAlpha(Frame:GetAlpha() + Speed + V.ElvUI_Animations.AlphaBuildUp[Index][i])
-					end
-				end
-				if Frame:GetAlpha() > Alpha then
-					if Frame:GetAlpha() - Speed - V.ElvUI_Animations.AlphaBuildUp[Index][i] <= Alpha then
-						Frame:SetAlpha(Alpha)
-					else
-						Frame:SetAlpha(Frame:GetAlpha() - Speed - V.ElvUI_Animations.AlphaBuildUp[Index][i])
-					end
-				end
+--		if Frame ~= nil and Frame:IsShown() == true then
+--			local AnimGroup = V.ElvUI_Animations.Combat.AnimationGroup[Index][i]
+--			local AlphaAnim = V.ElvUI_Animations.Combat.AlphaAnimation[Index][i]
 
-				V.ElvUI_Animations.AlphaBuildUp[Index][i] = 0
-			else
-				V.ElvUI_Animations.AlphaBuildUp[Index][i] = V.ElvUI_Animations.AlphaBuildUp[Index][i] + Speed	
-			end
-		end
-	end
-end
+--			AnimGroup:Stop()
 
-function ElvUI_Animations:OnLoad()
-	ElvUI_Animations:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
-	ElvUI_Animations:RegisterEvent("PLAYER_STARTED_MOVING", "OnEvent")
-	ElvUI_Animations:RegisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
-	ElvUI_Animations:RegisterEvent("PLAYER_REGEN_DISABLED", "OnEvent")
-	ElvUI_Animations:RegisterEvent("PLAYER_FLAGS_CHANGED", "OnEvent")
+--			AlphaAnim:SetDuration(Duration)
 
-	MyWorldFrame = CreateFrame("Frame", "Test", WorldFrame)
+--			AlphaAnim:SetChange(Alpha - Frame:GetAlpha())
 
-	MyWorldFrame:SetPropagateKeyboardInput(true)
+--			AlphaAnim:SetSmoothing(Smoothing)
 
-	MyWorldFrame:SetScript("OnKeyDown", 
-		function(self, button)
-			ElvUI_Animations:OnEvent("PLAYER_STARTED_MOVING")
-		end)
+--			AnimGroup:Play()
 
-	MyUIParent = CreateFrame("Frame", "MyUIParent", UIParent)
+--			AnimGroup:SetScript("OnFinished",
+--				function()
+--					Frame:SetAlpha(Alpha)
+--				end)
+--		end
+--	end
+--end
 
-	MyUIParent:SetScript("OnUpdate",
-		function(self, elapsed)
-			ElvUI_Animations:OnUpdate(elapsed)
-		end)
-end
+--function ElvUI_Animations:AttemptMouseOverFade(Index, DeltaTime, Option)
+--	local DataBase = E.db.ElvUI_Animations[Index]
 
-function ElvUI_Animations:OnEvent(Event, ...)
-	if Event == "PLAYER_ENTERING_WORLD" then	
-		ElvUI_Animations:ReloadCombatAnimationGroup()
+--	if DataBase.Combat.Enabled then
+--		if DataBase.Combat.UseDefaults then
+--			DataBase = E.db.ElvUI_Animations[1]
+--		end
 
-		if E.db.ElvUI_Animations.Animate then
-			if E.db.ElvUI_Animations.Lag then
-				UIParent:Hide()
-			else
-				UIParent:SetAlpha(0)
-			end
-			
-			MyWorldFrame:Show()
-			ShouldAppear = true
-		end
-	end
+--		local Alpha = { Start = DataBase.Combat.Alpha.In, End = DataBase.Combat.Mouse.Alpha }
+--		local Duration = DataBase.Combat.Mouse.Duration.On
 
-	if (Event == "PLAYER_STARTED_MOVING" or Event == "PLAYER_REGEN_DISABLED") and ShouldAppear and E.db.ElvUI_Animations.Animate then
-		if E.db.ElvUI_Animations.Lag then
-			UIParent:Show()
-		else
-			UIParent:SetAlpha(1)
-		end
-		MyWorldFrame:Hide()
-		for i = 2, #E.db.ElvUI_Animations do
-			ElvUI_Animations:AttemptAnimation(i)
-		end
-		ShouldAppear = false		
-	end
-	if Event == "PLAYER_FLAGS_CHANGED" and UnitIsAFK("player") and E.db.ElvUI_Animations.Animate and E.db.ElvUI_Animations.AFK then
-		MyWorldFrame:Show()
-		ShouldAppear = true
-	end
+--		if Option ~= "Focus" then
+--			Alpha.Start = DataBase.Combat.Mouse.Alpha
+--			Duration = DataBase.Combat.Mouse.Duration.Off
+--			if not InCombat then
+--				Alpha.End = DataBase.Combat.Alpha.Out
+--			else
+--				Alpha.End = DataBase.Combat.Alpha.In
+--			end
+--		else
+--			if not InCombat then
+--				Alpha.Start = DataBase.Combat.Alpha.Out
+--			end
+--		end
 
-	if Event == "PLAYER_REGEN_DISABLED" then
-		InCombat = true
-		if E.db.ElvUI_Animations.Combat then
-			for i = 2, #E.db.ElvUI_Animations do
-				ElvUI_Animations:AttemptCombatFade(i, "In")
-			end
-		end
-	end
-	if Event == "PLAYER_REGEN_ENABLED" then
-		InCombat = false
-		if E.db.ElvUI_Animations.Combat then
-			for i = 2, #E.db.ElvUI_Animations do
-				ElvUI_Animations:AttemptCombatFade(i, "Out")
-			end
-		end
-	end
-end
+--		local DeltaAlpha = abs(Alpha.End - Alpha.Start)
 
-function ElvUI_Animations:OnUpdate(DeltaTime)
-	local FocusFrame = GetMouseFocus()
+--		if DataBase.Combat.Mouse.Enabled then
+--			ElvUI_Animations:MouseOverFade(
+--				E.db.ElvUI_Animations[Index].Config.Frame,
+--				Index,
+--				Alpha.End,
+--				(DeltaAlpha/Duration)*DeltaTime)
+--		end
+--	end
+--end
 
-	local TouchingChildFrame
+--function ElvUI_Animations:MouseOverFade(FrameString, Index, Alpha, Speed)	
+--	for i = 1, #FrameString do
+--		local Frame = GetClickFrame(FrameString[i])
 
-	if FocusFrame ~= nil and E.db.ElvUI_Animations.Combat then
-		for i = 2, #E.db.ElvUI_Animations do
-			TouchingChildFrame = false
-			for j = 1, #E.db.ElvUI_Animations[i].Config.Frame do
-				local FrameAtIndex = GetClickFrame(E.db.ElvUI_Animations[i].Config.Frame[j])
-				if FrameAtIndex ~= nil and (MouseIsOver(FrameAtIndex) and FrameAtIndex:IsShown()) then
-					TouchingChildFrame = true
-					ElvUI_Animations:AttemptMouseOverFade(i, DeltaTime, "Focus")
-				end
-			end
-			if not TouchingChildFrame then
-				ElvUI_Animations:AttemptMouseOverFade(i, DeltaTime, "Non-Focus")
-			end
-		end
-	end
+--		if Frame ~= nil and Frame:IsShown() == true and not V.ElvUI_Animations.Animation.AnimationGroup[Index][i]:IsPlaying() then
+--			if abs(V.ElvUI_Animations.AlphaBuildUp[Index][i] + Speed) > 0.01 then				
+--				if Frame:GetAlpha() < Alpha then
+--					if  Frame:GetAlpha() + Speed + V.ElvUI_Animations.AlphaBuildUp[Index][i] >= Alpha then
+--						Frame:SetAlpha(Alpha)
+--					else 
+--						Frame:SetAlpha(Frame:GetAlpha() + Speed + V.ElvUI_Animations.AlphaBuildUp[Index][i])
+--					end
+--				end
+--				if Frame:GetAlpha() > Alpha then
+--					if Frame:GetAlpha() - Speed - V.ElvUI_Animations.AlphaBuildUp[Index][i] <= Alpha then
+--						Frame:SetAlpha(Alpha)
+--					else
+--						Frame:SetAlpha(Frame:GetAlpha() - Speed - V.ElvUI_Animations.AlphaBuildUp[Index][i])
+--					end
+--				end
 
-	PrevFocusFrame = FocusFrame
+--				V.ElvUI_Animations.AlphaBuildUp[Index][i] = 0
+--			else
+--				V.ElvUI_Animations.AlphaBuildUp[Index][i] = V.ElvUI_Animations.AlphaBuildUp[Index][i] + Speed	
+--			end
+--		end
+--	end
+--end
 
-	--collectgarbage()
-end
+--function ElvUI_Animations:OnLoad()
+--	ElvUI_Animations:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
+--	ElvUI_Animations:RegisterEvent("PLAYER_STARTED_MOVING", "OnEvent")
+--	ElvUI_Animations:RegisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
+--	ElvUI_Animations:RegisterEvent("PLAYER_REGEN_DISABLED", "OnEvent")
+--	ElvUI_Animations:RegisterEvent("PLAYER_FLAGS_CHANGED", "OnEvent")
+
+--	MyWorldFrame = CreateFrame("Frame", "Test", WorldFrame)
+
+--	MyWorldFrame:SetPropagateKeyboardInput(true)
+
+--	MyWorldFrame:SetScript("OnKeyDown", 
+--		function(self, button)
+--			ElvUI_Animations:OnEvent("PLAYER_STARTED_MOVING")
+--		end)
+
+--	MyUIParent = CreateFrame("Frame", "MyUIParent", UIParent)
+
+--	MyUIParent:SetScript("OnUpdate",
+--		function(self, elapsed)
+--			ElvUI_Animations:OnUpdate(elapsed)
+--		end)
+--end
+
+--function ElvUI_Animations:OnEvent(Event, ...)
+--	if Event == "PLAYER_ENTERING_WORLD" then	
+--		ElvUI_Animations:ReloadCombatAnimationGroup()
+
+--		if E.db.ElvUI_Animations.Animate then
+--			if E.db.ElvUI_Animations.Lag then
+--				UIParent:Hide()
+--			else
+--				UIParent:SetAlpha(0)
+--			end
+
+--			MyWorldFrame:Show()
+--			ShouldAppear = true
+--		end
+--	end
+
+--	if (Event == "PLAYER_STARTED_MOVING" or Event == "PLAYER_REGEN_DISABLED") and ShouldAppear and E.db.ElvUI_Animations.Animate then
+--		if E.db.ElvUI_Animations.Lag then
+--			UIParent:Show()
+--		else
+--			UIParent:SetAlpha(1)
+--		end
+--		MyWorldFrame:Hide()
+--		for i = 2, #E.db.ElvUI_Animations do
+--			ElvUI_Animations:AttemptAnimation(i)
+--		end
+--		ShouldAppear = false		
+--	end
+--	if Event == "PLAYER_FLAGS_CHANGED" and UnitIsAFK("player") and E.db.ElvUI_Animations.Animate and E.db.ElvUI_Animations.AFK then
+--		MyWorldFrame:Show()
+--		ShouldAppear = true
+--	end
+
+--	if Event == "PLAYER_REGEN_DISABLED" then
+--		InCombat = true
+--		if E.db.ElvUI_Animations.Combat then
+--			for i = 2, #E.db.ElvUI_Animations do
+--				ElvUI_Animations:AttemptCombatFade(i, "In")
+--			end
+--		end
+--	end
+--	if Event == "PLAYER_REGEN_ENABLED" then
+--		InCombat = false
+--		if E.db.ElvUI_Animations.Combat then
+--			for i = 2, #E.db.ElvUI_Animations do
+--				ElvUI_Animations:AttemptCombatFade(i, "Out")
+--			end
+--		end
+--	end
+--end
+
+--function ElvUI_Animations:OnUpdate(DeltaTime)
+--	local FocusFrame = GetMouseFocus()
+
+--	local TouchingChildFrame
+
+--	if FocusFrame ~= nil and E.db.ElvUI_Animations.Combat then
+--		for i = 2, #E.db.ElvUI_Animations do
+--			TouchingChildFrame = false
+--			for j = 1, #E.db.ElvUI_Animations[i].Config.Frame do
+--				local FrameAtIndex = GetClickFrame(E.db.ElvUI_Animations[i].Config.Frame[j])
+--				if FrameAtIndex ~= nil and (MouseIsOver(FrameAtIndex) and FrameAtIndex:IsShown()) then
+--					TouchingChildFrame = true
+--					ElvUI_Animations:AttemptMouseOverFade(i, DeltaTime, "Focus")
+--				end
+--			end
+--			if not TouchingChildFrame then
+--				ElvUI_Animations:AttemptMouseOverFade(i, DeltaTime, "Non-Focus")
+--			end
+--		end
+--	end
+
+--	PrevFocusFrame = FocusFrame
+
+--	--collectgarbage()
+--end
 
 function _ElvUI_Animations:Initialize()
 	-- Register plugin so options are properly inserted when config is loaded
 	_EP:RegisterPlugin(_AddonName, _ElvUI_Animations.InsertOptions)
 end
 
-local ShouldAppear = false
+--local ShouldAppear = false
 
-ElvUI_Animations:OnLoad()
+--ElvUI_Animations:OnLoad()

@@ -9,68 +9,29 @@
 
 local E, L, V, P, G = unpack(ElvUI);	-- Import: Engine, Locales, PrivateDB, ProfileDB, GlobalDB
 
-local _ElvUI_Animations = E:GetModule('_ElvUI_Animations', 'AceHook-3.0', 'AceEvent-3.0', 'AceTimer-3.0'); -- Create a plugin within ElvUI and adopt AceHook-3.0, AceEvent-3.0 and AceTimer-3.0. We can make use of these later.
+local _DataBase
+local _Options
+
+local _ElvUI_Animations = E:GetModule('ElvUI_Animations', 'AceHook-3.0', 'AceEvent-3.0', 'AceTimer-3.0'); -- Create a plugin within ElvUI and adopt AceHook-3.0, AceEvent-3.0 and AceTimer-3.0. We can make use of these later.
 
 local _AddonName, _AddonTable = ... -- See http://www.wowinterface.com/forums/showthread.php?t=51502&p=304704&postcount=2
 
 
-V.ElvUI_Animations = {
-	Combat = {
-		AnimationGroup = { },
-		AlphaAnimation = { },
-	},
-	Animation = {
-		AnimationGroup = { },
-		AlphaAnimation = { },
-		TranslationAnimation = { },
-	},
+--V.ElvUI_Animations = {
+--	Combat = {
+--		AnimationGroup = { },
+--		AlphaAnimation = { },
+--	},
+--	Animation = {
+--		AnimationGroup = { },
+--		AlphaAnimation = { },
+--		TranslationAnimation = { },
+--	},
 
-	AlphaBuildUp = { },	-- For some reason adding less than 0.01 alpha to a frame seems to cause floating point error where it isn't added to the overall alpha of the frame
-	
-	DeleteTab = "",
-}
+--	AlphaBuildUp = { },	-- For some reason adding less than 0.01 alpha to a frame seems to cause floating point error where it isn't added to the overall alpha of the frame
 
-function ElvUI_Animations:ReloadCombatAnimationGroup()	
-	for i = 1, #E.db.ElvUI_Animations do
-		if i ~= 1 then
-			V.ElvUI_Animations.Combat.AnimationGroup[i] = V.ElvUI_Animations.Combat.AnimationGroup[i] or { }
-			V.ElvUI_Animations.Combat.AlphaAnimation[i] = V.ElvUI_Animations.Combat.AlphaAnimation[i] or { }
-			
-			V.ElvUI_Animations.AlphaBuildUp[i] = V.ElvUI_Animations.AlphaBuildUp[i] or { }
-			
-			for j = 1, #E.db.ElvUI_Animations[i].Config.Frame do
-				local FrameAtIndex = GetClickFrame(E.db.ElvUI_Animations[i].Config.Frame[j])
-
-				if  FrameAtIndex ~= nil then
-					V.ElvUI_Animations.Combat.AnimationGroup[i][j] = FrameAtIndex:CreateAnimationGroup()
-					V.ElvUI_Animations.Combat.AlphaAnimation[i][j] = V.ElvUI_Animations.Combat.AnimationGroup[i][j]:CreateAnimation("Alpha")
-				
-					V.ElvUI_Animations.AlphaBuildUp[i][j] = 0
-				end
-			end
-		end
-	end
-
-	for i = 1, #E.db.ElvUI_Animations do
-		if i ~= 1 then
-			V.ElvUI_Animations.Animation.AnimationGroup[i] = V.ElvUI_Animations.Animation.AnimationGroup[i] or { }
-			V.ElvUI_Animations.Animation.AlphaAnimation[i] = V.ElvUI_Animations.Animation.AlphaAnimation[i] or { }
-			
-			for j = 1, #E.db.ElvUI_Animations[i].Config.Frame do
-				local FrameAtIndex = GetClickFrame(E.db.ElvUI_Animations[i].Config.Frame[j])
-
-				if  FrameAtIndex ~= nil then
-					V.ElvUI_Animations.Animation.AnimationGroup[i][j] = FrameAtIndex:CreateAnimationGroup()
-					V.ElvUI_Animations.Animation.AlphaAnimation[i][j] = V.ElvUI_Animations.Animation.AlphaAnimation[i][j] or { }
-
-					for k = 1, #E.db.ElvUI_Animations[i].Animation do
-							V.ElvUI_Animations.Animation.AlphaAnimation[i][j][k] = V.ElvUI_Animations.Animation.AnimationGroup[i][j]:CreateAnimation(E.db.ElvUI_Animations[i].Animation[k].AnimationName)
-					end
-				end
-			end
-		end
-	end
-end
+--	DeleteTab = "",
+--}
 
 -- Function we can call when a setting changes.
 local function Update(Index)
@@ -179,13 +140,16 @@ local function Update(Index)
 	end
 end
 
-local function CreateConfigTab(Index, Order)
-	local TabConfig = { }
+local function CreateConfigTab(KeyName)
+	local TabConfig = { }		-- Create the return table
+	
+	local DataBase = _DataBase[KeyName]		-- The local 'DataBase' should always point to the relevant configuration tab
+	local Options = _Options[KeyName]		-- The local 'Options' should always point to the relevant configuration tab
 
 	TabConfig = {
-		order = Index,
+		order = DataBase.Config.Order,
 		type = "group",
-		name = E.db.ElvUI_Animations[Index].Config.Name.." Configuration",
+		name = DataBase.Config.Name.." Configuration",
 		guiInline = true,
 		args = {
 			Name = {
@@ -194,75 +158,75 @@ local function CreateConfigTab(Index, Order)
 				name = "Rename Tab",
 				get = 
 					function(info)
-						return E.db.ElvUI_Animations[Index].Config.Name
+						return DataBase.Config.Name
 					end,
 				set = 
 					function(info, value)
-						E.db.ElvUI_Animations[Index].Config.Name = value
-								
-						--E:CopyTable(E.Options.args.ElvUI_Animations.args[string.gsub(value, "%s+", "")], E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[Index].Config.KeyName])
-				
-						--E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[Index].Config.KeyName] = nil
-								
-						--E.db.ElvUI_Animations[Index].Config.KeyName = string.gsub(value, "%s+", "")
-						ElvUI_Animations:InsertOptions()
+						DataBase.Config.Name = value
+						Options.name = DataBase.Config.Name
+						
+						--E:RefreshGUI()
 					end,
 			},
 			Frames = {
 				order = 5,
 				type = "input",
 				name = "Change Frames",
-				desc = "Enter the name of the frame that you would like to be affected by this tabs configuration.\nFormat is:\n%Frame1%; %Frame2%;\n\nYou can put a 'return' inbetween frames.\n\nUse /framestack to check the names of frames",
+				desc = "Enter the name of the frame that you would like to be affected by this tabs configuration.\nFormat is:\n\n%Frame1%; %Frame2%;\n\nYou can put a 'return' inbetween frames.\n\nUse /framestack to check the names of frames",
 				multiline = true,
 				get = 
 					function(info)
 						local ReturnString = ""
 
-						for j = 1, #E.db.ElvUI_Animations[Index].Config.Frame do
-							if E.db.ElvUI_Animations[Index].Config.Error[j] then
+						for j = 1, #DataBase.Config.Frame do
+							if DataBase.Config.Error[j] then
 								ReturnString = ReturnString.."|cffFF1010"
 							end
 
-							ReturnString = ReturnString..E.db.ElvUI_Animations[Index].Config.Frame[j]
+							ReturnString = ReturnString..DataBase.Config.Frame[j]
 
-							if E.db.ElvUI_Animations[Index].Config.Error[j] then
+							if DataBase.Config.Error[j] then
 								ReturnString = ReturnString.."|r"
 							end
 							
 							ReturnString = ReturnString..";\n"
 						end
---								if i == 3 then print(ReturnString) end
+
 						return ReturnString
 					end,
 				set = 
 					function(info, value)
-							local Parse = string.gsub(value, "%s+", "")
-							local Current = { Start = 1, End = string.len(Parse) }	
+						local Parse = string.gsub(value, "%s+", "")
+						local Current = { Start = 1, End = string.len(Parse) }	
 							
 --									local ToPrint = ""
 --									for j = 1, string.len(value) do ToPrint = ToPrint.." "..string.sub(value, j, j) end
 --									print(ToPrint)
-							E.db.ElvUI_Animations[Index].Config.Frame = { Fade = E.db.ElvUI_Animations[Index].Config.Frame.Fade, }
-							local j = 1
+						DataBase.Config.Frame = { Fade = DataBase.Config.Frame.Fade, }
+						local j = 1
 									
-							while string.find(Parse, "|cff") do
-								Current.Start = string.find(Parse, "|cff") + 10
-								Current.End = string.find(Parse,"|r")
+						while string.find(Parse, "|cff") do
+							Current.Start = string.find(Parse, "|cff") + 10
+							Current.End = string.find(Parse,"|r")
    
-								Parse = string.sub(Parse, 1, Current.Start - 11)..string.sub(Parse, Current.Start, Current.End -1)..string.sub(Parse, Current.End + 2, string.len(Parse))  
-							end
-							j = 1
-							while string.find(Parse, ";") do
-								Current.End = string.find(Parse, ";")
+							Parse = string.sub(Parse, 1, Current.Start - 11)..string.sub(Parse, Current.Start, Current.End -1)..string.sub(Parse, Current.End + 2, string.len(Parse))  
+						end
+						j = 1
+						while string.find(Parse, ";") do
+							Current.End = string.find(Parse, ";")
 							
-								E.db.ElvUI_Animations[Index].Config.Frame[j] = string.sub(Parse, 1, Current.End - 1)
+							DataBase.Config.Frame[j] = string.sub(Parse, 1, Current.End - 1)
 									
-								Parse = string.sub(Parse, Current.End + 1, string.len(Parse))
+							Parse = string.sub(Parse, Current.End + 1, string.len(Parse))
 
-								j = j + 1
-							end
+							j = j + 1
+						end
+						
+						_AddonTable:UpdateAnimGroups(KeyName)
 
-							ElvUI_Animations:InsertOptions()
+						for k, v in pairs(DataBase.Animation) do
+							_AddonTable:CacheAnim(KeyName, k)
+						end
 					end,
 			},				
 		},
@@ -273,14 +237,20 @@ local function CreateConfigTab(Index, Order)
 		name = "Move Up",
 		desc = "Move this tab up one space",
 		func = 
-			function()						
-				local TableHolder = E.db.ElvUI_Animations[Index]
-				print(TableHolder, E.db.ElvUI_Animations[Index])
-				E.db.ElvUI_Animations[Index] = E.db.ElvUI_Animations[Index-1]
-				print(TableHolder, E.db.ElvUI_Animations[Index])
-				E.db.ElvUI_Animations[Index-1] = TableHolder					
-						
-				ElvUI_Animations:InsertOptions()
+			function()
+				DataBase.Config.Order = DataBase.Config.Order - 1 					
+				for k, v in pairs(_DataBase) do
+					if string.find(k, "_Tab") then
+						local DataBaseToMove = _DataBase[k]
+						local OptionToMove = _Option[k]
+
+						if DataBaseToMove.Config.Order == DataBase.Config.Order then
+							DataBaseToMove.Config.Order = TabToMove.Config.Order + 1
+							OptionToMove.order = DataBaseToMove.Config.Order
+						end
+					end
+				end
+				--E:RefreshGUI()
 			end,
 	}
 	TabConfig.args.MoveDown = {
@@ -290,12 +260,19 @@ local function CreateConfigTab(Index, Order)
 		desc = "Move this tab Down one space",
 		func = 
 			function()						
-				local TableHolder = E.db.ElvUI_Animations[Index]
-					
-				E.db.ElvUI_Animations[Index] = E.db.ElvUI_Animations[Index+1]
-				E.db.ElvUI_Animations[Index+1] = TableHolder					
-						
-				ElvUI_Animations:InsertOptions()
+				DataBase.Config.Order = DataBase.Config.Order + 1 					
+				for k, v in pairs(_DataBase) do
+					if string.find(k, "_Tab") then
+						local DataBaseToMove = _DataBase[k]
+						local OptionToMove = _Option[k]
+
+						if DataBaseToMove.Config.Order == DataBase.Config.Order then
+							DataBaseToMove.Config.Order = TabToMove.Config.Order - 1
+							OptionToMove.order = DataBaseToMove.Config.Order
+						end
+					end
+				end
+				--E:RefreshGUI()
 			end,
 	}
 	if Index == 2 then
@@ -582,145 +559,152 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 end
 
 -- This function inserts our GUI table into the ElvUI Config. You can read about AceConfig here: http://www.wowace.com/addons/ace3/pages/ace-config-3-0-options-tables/
-function ElvUI_Animations:InsertOptions()		
+function _ElvUI_Animations:InsertOptions()
 	E.Options.args.ElvUI_Animations = {
 		order = 100,
 		type = "group",
 		name = "|cff00b3ffAnimations|r",
-		args = {
-			Animate = {
-				order = 1,
-				type = "toggle",
-				name = "Enable Animations",
-				desc = "Whether or not to animate the frames after a load screen",
-				get = function(info)
-					return E.db.ElvUI_Animations.Animate
-				end,
-				set = function(info, value)
-					E.db.ElvUI_Animations.Animate = value
-					for i = 1, #E.db.ElvUI_Animations do
-						Update(i)
-					end
-				end,
-			},
-			Combat = {
-				order = 2,
-				type = "toggle",
-				name = "Enable Combat Fade",
-				desc = "Whether or not to fade based on combat flags options",
-				get = function(info)
-					return E.db.ElvUI_Animations.Combat
-				end,
-				set = function(info, value)
-					E.db.ElvUI_Animations.Combat = value
-					for i = 1, #E.db.ElvUI_Animations do
-						Update(i)
-					end
-				end,
-			},
-			Lagging = {
-				order = 3,
-				type = "toggle",
-				name = "After Load Lag",
-				desc = "\"Halp! I'm lagging after loading when it's playing the load animation!\"\n\nTry DIS-abling this toggle to speed up the after load animation. It may cause a graphical error though :(",
-				get = function(info)
-					return E.db.ElvUI_Animations.Lag
-				end,
-				set = function(info, value)
-					E.db.ElvUI_Animations.Lag = value
-				end,
-			},
-			AFKAnimation = {
-				order = 4,
-				type = "toggle",
-				name = "Enable After AFK Animation",
-				desc = "Allow the after load animations to also play when returning from AFK",
-				get = function(info)
-					return E.db.ElvUI_Animations.AFK
-				end,
-				set = function(info, value)
-					E.db.ElvUI_Animations.AFK = value
-				end,
-			},
-			RestoreDefaults = {
-				order = 5,
-				type = "execute",
-				name = "Restore Defaults",
-				desc = "Restore all values back to default, but just for this addon not ElvUI don't worry!",
-				func = function()
-					E:StaticPopup_Show("RestoreDefaults")
-				end,
-			},
-			Header1 = 
-			{
-				order = 9,
-				type = "header",
-				name = "",
-			},
-			NewTab = {
-				order = 10,
-				type = "input",
-				name = "Create New Tab",
-				desc = "Create a new tab to configure for a new set of frames.\n\nJust don't forget to actually add frames to the configuration or it won't do anything",
-				get = 
-					function(info)
-						return ""
-					end,
-				set = 
-					function(info, value)
-						E.db.ElvUI_Animations[#E.db.ElvUI_Animations] = addonTable:Copy(DEFAULT)
-
-						E.db.ElvUI_Animations[#E.db.ElvUI_Animations].Config = {
-							KeyName = "Tab"..(#E.db.ElvUI_Animations ),			-- The name of the key in the table. ex: E.Options.args.ElvUI_Animations.args[%THIS_VALUE_HERE%]
-							Frame = { "Nothing Yet...",							-- The name of the frames affected by this tabs settings
-								Fade = { }, 
-							},									
-							Name = value,										-- The name displayed to the user for this tab
-							Error = { 
-								Fade = {  }, 
-							},								
-						}
-
-						ElvUI_Animations:InsertOptions()
-					end,
-			},
-			Header2 = {
-				order = 11,
-				type = "header",
-				name = "",
-			},
-			TabSelection = {
-				order = 12,
-				type = "select",
-				name = "",
-				values = { },
-				get = 
-					function(info)
-						return V.ElvUI_Animations.DeleteTab
-					end,
-				set = 
-					function(info, value)
-						V.ElvUI_Animations.DeleteTab = value
-					end,
-				
-			},
-			DeleteThis = {
-				order = 13,
-				type = "execute",
-				name = "Delete Tab",
-				desc = "Delete the selected Tab",
-				func = 
-					function()
-						E:StaticPopup_Show("DeleteTab")
-					end,
-			},
-		},
+		args = { },
 	}
-	for i = 2, #E.db.ElvUI_Animations do
-		E.Options.args.ElvUI_Animations.args.TabSelection.values[tostring(i)] = E.db.ElvUI_Animations[i].Config.Name
+
+	_DataBase = E.db.ElvUI_Animations
+	_Options = E.Options.args.ElvUI_Animations.args
+	_AddonTable.Cache:InitCache()
+	
+	_Options.Animate = {
+		order = 1,
+		type = "toggle",
+		name = "Enable Animations",
+		desc = "Whether or not to animate the frames after a load screen",
+		get = function(info)
+			return _DataBase.Animate
+		end,
+		set = function(info, value)
+			_DataBase.Animate = value
+			for i = 1, #_DataBase do
+				Update(i)
+			end
+		end,
+	}
+	_Options.Combat = {
+		order = 2,
+		type = "toggle",
+		name = "Enable Combat Fade",
+		desc = "Whether or not to fade based on combat flags options",
+		get = function(info)
+			return _DataBase.Combat
+		end,
+		set = function(info, value)
+			_DataBase.Combat = value
+			for i = 1, #_DataBase do
+				Update(i)
+			end
+		end,
+	}
+	Lagging = {
+		order = 3,
+		type = "toggle",
+		name = "After Load Lag",
+		desc = "\"Halp! I'm lagging after loading when it's playing the load animation!\"\n\nTry DIS-abling this toggle to speed up the after load animation. It may cause a graphical error though :(",
+		get = function(info)
+			return _DataBase.Lag
+		end,
+		set = function(info, value)
+			_DataBase.Lag = value
+		end,
+	}
+	_Options.AFKAnimation = {
+		order = 4,
+		type = "toggle",
+		name = "Enable After AFK Animation",
+		desc = "Allow the after load animations to also play when returning from AFK",
+		get = function(info)
+			return E.db.ElvUI_Animations.AFK
+		end,
+		set = function(info, value)
+			_DataBase.AFK = value
+		end,
+	}
+	_Options.RestoreDefaults = {
+		order = 5,
+		type = "execute",
+		name = "Restore Defaults",
+		desc = "Restore all values back to default, but just for this addon not ElvUI don't worry!",
+		func = function()
+			E:StaticPopup_Show("RestoreDefaults")
+		end,
+	}
+	_Options.Header1 = 
+	{
+		order = 9,
+		type = "header",
+		name = "",
+	}
+	_Options.NewTab = {
+		order = 10,
+		type = "input",
+		name = "Create New Tab",
+		desc = "Create a new tab to configure for a new set of frames.\n\nJust don't forget to actually add frames to the configuration or it won't do anything",
+		get = 
+			function(info)
+				return ""
+			end,
+		set = 
+			function(info, value)
+				_DataBase.CurrentTabs = _DataBase.CurrentTabs + 1
+				_DataBase["Custom_Tab".._DataBase.CurrentTabs] = addonTable:Copy(DEFAULT)
+
+				E.db.ElvUI_Animations[_DataBase.CurrentTabs].Config = {
+					Order = _DataBase.CurrentTabs,			-- The name of the key in the table. ex: E.Options.args.ElvUI_Animations.args[%THIS_VALUE_HERE%]
+					Frame = { "Enter Frames Here",				-- The name of the frames affected by this tabs settings
+						Fade = { }, 
+					},									
+					Name = value,							-- The name displayed to the user for this tab
+					Error = { 
+						Fade = {  }, 
+					},								
+				}
+
+				--E:RefreshGUI()
+			end,
+	}
+	_Options.Header2 = {
+		order = 11,
+		type = "header",
+		name = "",
+	}
+	_Options.TabSelection = {
+		order = 12,
+		type = "select",
+		name = "",
+		values = { },
+		get = 
+			function(info)
+				return _AddonTable.TabToDelete
+			end,
+		set = 
+			function(info, value)
+				_AddonTable.TabToDelete = value
+			end,				
+	}
+	_Options.DeleteThis = {
+		order = 13,
+		type = "execute",
+		name = "Delete Tab",
+		desc = "Delete the selected Tab",
+		func = 
+			function()
+				E:StaticPopup_Show("DeleteTab")
+			end,
+	}
+	print(E.db.ElvUI_Animations, _DataBase)
+	for k, v in pairs(_DataBase) do
+		if string.find(k, "_Tab") and k ~= "Default_Tab" then
+			E.Options.args.ElvUI_Animations.args.TabSelection.values[k] = _DataBase[k].Config.Name
+		end
 	end
 
-	for i = 1, #E.db.ElvUI_Animations do					
+	for i = 1, 0 do					
 		E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName] = {
 			order = i + 10 + #E.db.ElvUI_Animations,
 			type = "group",
@@ -1175,4 +1159,43 @@ E.PopupDialogs.DeleteTab = {
 	preferredIndex = 3,
 }
 
+function _AddonTable:CreateAnimationGroups()
+	for k, v in pairs(_DataBase) do
+		if string.find(k, "_Tab") then
+			local AddonTable = _AddonTable.Animations[k]
+			local DataBase = _DataBase[k]
+		
+			for i = 1, #DataBase.Config.Frame do
+				local Frame = GetClickFrame(DataBase.Config.Frame[i])
+			
+				AddonTable.AnimationGroup[i] = Frame:CreateAnimationGroup()
+				for kk, vv in pairs(DataBase.Animation) do
+					if string.find(kk, "_Tab") then
+						AddonTable.Animation[k.."__"..kk] = AddonTable.AnimationGroup[i]:CreateAnimation(DataBase.Animation[kk].AnimationName)
+					end
+				end
+			end
+		end
+	end
+end
+
+function _AddonTable:UpdateAnimationGroups(KeyName)
+	local AddonTable = _AddonTable.Animations[KeyName]
+	local DataBase = _DataBase[KeyName]
+		
+	for i = 1, #DataBase.Config.Frame do
+		local Frame = GetClickFrame(DataBase.Config.Frame[i])
+			
+		AddonTable.AnimationGroup[i] = Frame:CreateAnimationGroup()
+		for kk, vv in pairs(DataBase.Animation) do
+			if string.find(kk, "_Tab") then
+				AddonTable.Animation[KeyName.."__"..kk] = AddonTable.AnimationGroup[i]:CreateAnimation(DataBase.Animation[kk].AnimationName)
+			end
+		end
+	end
+end
+
 E:RegisterModule(_ElvUI_Animations:GetName()) -- Register the module with ElvUI. ElvUI will now call _ElvUI_Animations:Initialize() when ElvUI is ready to load our plugin.
+
+_AddonTable.UpdateAnimGroups = _AddonTable.UpdateAnimationGroups
+_AddonTable.CreateAnimGroups = _AddonTable.CreateAnimationGroups
