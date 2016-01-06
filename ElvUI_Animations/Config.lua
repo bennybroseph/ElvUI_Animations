@@ -27,16 +27,17 @@ local _Cache = _AddonTable.Cache
 
 -- Function we can call when a setting changes.
 local function UpdateState(KeyName)
-	local DataBase = _DataBase[KeyName]									-- The local 'DataBase' should always point to the relevant animation configuration tab
-	local AnimationOptions = _Options[KeyName].args.AnimationOptions
-	local Combat = _Options[KeyName].args.CombatOptions
+	local DataBase = _DataBase[KeyName]										-- The local 'DataBase' should always point to the relevant animation configuration tab's data
+	local AnimationOptions = _Options[KeyName].args.AnimationOptions		-- The local 'AnimationOptions' should always point to the relevant animation configuration tab
+	local Combat = _Options[KeyName].args.CombatOptions						-- The local 'Combat' should always point to the relevant combat animation configuration tab
 
-	if KeyName ~= "Default_Tab" then
+	if KeyName ~= "Default_Tab" then		-- If we've been told by the caller of the function to update the something other than the default tab's state
+		--region Start disabling all the things
 		AnimationOptions.disabled = not _DataBase.Animate
 		AnimationOptions.args.GeneralOptions.disabled = true
 		AnimationOptions.args.GeneralOptions.args.UseDefaults.disabled = true
 
-		for k, v in pairs(DataBase.Animation) do
+		for k, v in pairs(DataBase.Animation) do		-- Iterate through each key in 'DataBase.Animation' and only stop on key which end in "_Tab"
 			if string.find(k, "_Tab") then		
 				AnimationOptions.args[k].args.GeneralOptions.disabled = true
 				AnimationOptions.args[k].args.Enabled.disabled = true
@@ -44,7 +45,9 @@ local function UpdateState(KeyName)
 				AnimationOptions.args[k].args.DurationOptions.args.Enabled.disabled = true
 			end
 		end
-
+		--endregion
+		
+		--region Traverse through each limiting option and enable things that should be
 		if E.db.ElvUI_Animations.Animate then
 			if DataBase.Animation.Enabled then
 				AnimationOptions.args.GeneralOptions.args.UseDefaults.disabled = false
@@ -68,6 +71,7 @@ local function UpdateState(KeyName)
 				end
 			end	
 		end
+		--endregion
 
 		Combat.disabled = true
 		Combat.args.UseDefaults.disabled = true
@@ -1068,8 +1072,8 @@ function _ElvUI_Animations:InsertOptions()
 					},								
 				}
 				
-				_Options["Custom_Tab".._DataBase.CurrentTabs] = { }
-				E:RefreshGUI()
+				_Options["Custom_Tab".._DataBase.CurrentTabs] = CreateTreeElement("Custom_Tab".._DataBase.CurrentTabs)
+				--E:RefreshGUI()
 			end,
 	}
 	_Options.Header2 = {
@@ -1163,8 +1167,21 @@ function _ElvUI_Animations:InsertOptions()
 		button2 = "No",
 		OnAccept = 
 			function() 
+				local DeleteThis = _System:Copy(_AddonTable._NotKept.TabToDelete)
+
 				_Options[_AddonTable._NotKept.TabToDelete] = nil
 				_DataBase[_AddonTable._NotKept.TabToDelete] = nil
+
+				for k, v in pairs(_DataBase) do
+					if string.find(k, "_Tab") then
+						local Config = _DataBase[k].Config
+						if Config.Order > DeleteThis then
+							Config.Order = Config.Order - 1
+							_Options[k].order = Config.Order
+						end
+					end
+				end
+
 				E:RefreshGUI()
 			end,
 		timeout = 0,
