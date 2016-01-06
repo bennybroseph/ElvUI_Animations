@@ -30,7 +30,7 @@ function _AddonTable._System:Copy(Table)
 
 	local Meta = getmetatable(Table)
 
-	local Target = {}
+	local Target = { }
 	for k, v in pairs(Table) do 
 		Target[k] = v 
 	end

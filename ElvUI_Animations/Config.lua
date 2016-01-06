@@ -12,10 +12,10 @@ local E, L, V, P, G = unpack(ElvUI);	-- Import: Engine, Locales, PrivateDB, Prof
 local _DataBase
 local _Options
 
-local _ElvUI_Animations = E:NewModule('ElvUI_Animations', 'AceHook-3.0', 'AceEvent-3.0', 'AceTimer-3.0');	-- Create a plugin within ElvUI and adopt AceHook-3.0, AceEvent-3.0 and AceTimer-3.0. We can make use of these later.
+local _ElvUI_Animations = E:NewModule('ElvUI_Animations', 'AceHook-3.0', 'AceEvent-3.0', 'AceTimer-3.0');	-- Create a plug-in within ElvUI and adopt AceHook-3.0, AceEvent-3.0 and AceTimer-3.0. We can make use of these later.
 _ElvUI_Animations.version = GetAddOnMetadata("ElvUI_Animations", "Version")
 
-E:RegisterModule(_ElvUI_Animations:GetName()) -- Register the module with ElvUI. ElvUI will now call _ElvUI_Animations:Initialize() when ElvUI is ready to load our plugin.
+E:RegisterModule(_ElvUI_Animations:GetName()) -- Register the module with ElvUI. ElvUI will now call _ElvUI_Animations:Initialize() when ElvUI is ready to load our plug-in.
 
 local _EP = LibStub("LibElvUIPlugin-1.0") -- We can use this to automatically insert our GUI tables when ElvUI_Config is loaded.
 
