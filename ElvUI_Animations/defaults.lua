@@ -208,8 +208,8 @@ _AddonTable._Defaults = {
 P.ElvUI_Animations = { CurrentTabs = 19, Animate = true, AFK = true, Combat = true, Lag = true, { }, }
 
 -- Created the defaults table for the addon. ElvUI does some magic here, somehow it ends up being named the same
-for i = 1, #_AddonTable._Defaults._Tabs._Names do
-	P.ElvUI_Animations[_AddonTable._Defaults.Tabs.Names[i]] = _System:Copy(_AddonTable._Defaults.Tab.Default)
+for i = 1, #_AddonTable._Defaults.Tab.Names do
+	P.ElvUI_Animations[_AddonTable._Defaults.Tab.Names[i]] = _System:Copy(_AddonTable._Defaults.Tab.Default)
 end
 
 P.ElvUI_Animations['Default_Tab'].Config = {

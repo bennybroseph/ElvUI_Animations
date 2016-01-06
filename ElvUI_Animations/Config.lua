@@ -26,45 +26,42 @@ local _System = _AddonTable._System
 local _Cache = _AddonTable.Cache
 
 -- Function we can call when a setting changes.
-local function Update(Index)
-	ElvUI_Animations:ReloadCombatAnimationGroup()
+local function UpdateState(KeyName)
+	local DataBase = _DataBase[KeyName]									-- The local 'DataBase' should always point to the relevant animation configuration tab
+	local AnimationOptions = _Options[KeyName].args.AnimationOptions
+	local Combat = _Options[KeyName].args.CombatOptions
 
-	-- I had to shorten these variables, they are WAY too long
-	local DataBase = E.db.ElvUI_Animations[Index]
-	local Animation = E.Options.args.ElvUI_Animations.args[DataBase.Config.KeyName].args.Animation
-	local Combat = E.Options.args.ElvUI_Animations.args[DataBase.Config.KeyName].args.Combat
+	if KeyName ~= "Default_Tab" then
+		AnimationOptions.disabled = not _DataBase.Animate
+		AnimationOptions.args.GeneralOptions.disabled = true
+		AnimationOptions.args.GeneralOptions.args.UseDefaults.disabled = true
 
-	if Index ~= 1 then
-		Animation.disabled = not E.db.ElvUI_Animations.Animate
-		Animation.args.General.disabled = true
-		Animation.args.General.args.UseDefaults.disabled = true
-		for k = 1, #DataBase.Animation do
-			local Key = "Animation_"..k
-
-			Animation.args[Key].args.General.disabled = true
-			Animation.args[Key].args.Enabled.disabled = true
-			Animation.args[Key].args.Duration.disabled = true
-			Animation.args[Key].args.Duration.args.Enabled.disabled = true
+		for k, v in pairs(DataBase.Animation) do
+			if string.find(k, "_Tab") then		
+				AnimationOptions.args[k].args.GeneralOptions.disabled = true
+				AnimationOptions.args[k].args.Enabled.disabled = true
+				AnimationOptions.args[k].args.DurationOptions.disabled = true
+				AnimationOptions.args[k].args.DurationOptions.args.Enabled.disabled = true
+			end
 		end
 
 		if E.db.ElvUI_Animations.Animate then
-			--Animation.disabled = false
 			if DataBase.Animation.Enabled then
-				Animation.args.General.args.UseDefaults.disabled = false
+				AnimationOptions.args.GeneralOptions.args.UseDefaults.disabled = false
 
 				if not DataBase.Animation.UseDefaults then
-					Animation.args.General.disabled = false
-					for k = 1, #DataBase.Animation do
-						local Key = "Animation_"..k
+					AnimationOptions.args.GeneralOptions.disabled = false
+					for k, v in pairs(DataBase.Animation) do
+						if string.find(k, "_Tab") then
+							AnimationOptions.args[k].args.Enabled.disabled = false
 
-						Animation.args[Key].args.Enabled.disabled = false
+							if DataBase.Animation[k].Enabled then
+								AnimationOptions.args[k].args.GeneralOptions.disabled = false
 
-						if DataBase.Animation[k].Enabled then
-							Animation.args[Key].args.General.disabled = false
-
-							Animation.args[Key].args.Duration.args.Enabled.disabled = false
-							if DataBase.Animation[k].Duration.Enabled then
-								Animation.args[Key].args.Duration.disabled = false
+								AnimationOptions.args[k].args.DurationOptions.args.Enabled.disabled = false
+								if DataBase.Animation[k].CustomDuration.Enabled then
+									AnimationOptions.args[k].args.DurationOptions.disabled = false
+								end
 							end
 						end
 					end
@@ -75,59 +72,60 @@ local function Update(Index)
 		Combat.disabled = true
 		Combat.args.UseDefaults.disabled = true
 
-		Combat.args.Alpha.disabled = true
-		Combat.args.Duration.disabled = true
-		Combat.args.Smoothing.disabled = true	
+		Combat.args.AlphaOptions.disabled = true
+		Combat.args.DurationOptions.disabled = true
+		Combat.args.SmoothingOptions.disabled = true	
 
-		Combat.args.Mouse.disabled = true
-		Combat.args.Mouse.args.Enabled.disabled = true
+		Combat.args.MouseOptions.disabled = true
+		Combat.args.MouseOptions.args.Enabled.disabled = true
 
-		if E.db.ElvUI_Animations.Combat then
+		if _DataBase.Combat then
 			Combat.disabled = false
 
 			if DataBase.Combat.Enabled then
 				Combat.args.UseDefaults.disabled = false
 				if not DataBase.Combat.UseDefaults then
-					Combat.args.Alpha.disabled = false
-					Combat.args.Duration.disabled = false
-					Combat.args.Smoothing.disabled = false
+					Combat.args.AlphaOptions.disabled = false
+					Combat.args.DurationOptions.disabled = false
+					Combat.args.SmoothingOptions.disabled = false
 
-					Combat.args.Mouse.args.Enabled.disabled = false
+					Combat.args.MouseOptions.args.Enabled.disabled = false
 					if DataBase.Combat.Mouse.Enabled then
-						Combat.args.Mouse.disabled = false
+						Combat.args.MouseOptions.disabled = false
 					end
 				end
 			end
 		end		
 	else 
-		Animation.disabled = true
-		for k = 1, #DataBase.Animation do
-			Key = "Animation_"..k
-			Animation.args[Key].args.General.disabled = true
-			Animation.args[Key].args.Enabled.disabled = false
-			Animation.args[Key].args.Duration.disabled = true
-			Animation.args[Key].args.Duration.args.Enabled.disabled = true
+		AnimationOptions.disabled = true
+		for k, v in pairs(DataBase.Animation) do
+			if string.find(k, "_Tab") then
+				AnimationOptions.args[k].args.GeneralOptions.disabled = true
+				AnimationOptions.args[k].args.Enabled.disabled = false
+				AnimationOptions.args[k].args.DurationOptions.disabled = true
+				AnimationOptions.args[k].args.DurationOptions.args.Enabled.disabled = true
 
-			if E.db.ElvUI_Animations.Animate then
-				Animation.disabled = false
+				if _DataBase.Animate then
+					AnimationOptions.disabled = false
 
-				if DataBase.Animation[k].Enabled then
-					Animation.args[Key].args.General.disabled = false
+					if DataBase.Animation[k].Enabled then
+						AnimationOptions.args[k].args.GeneralOptions.disabled = false
 
-					Animation.args[Key].args.Duration.args.Enabled.disabled = false
-					if DataBase.Animation[k].Duration.Enabled then
-						Animation.args[Key].args.Duration.disabled = false
+						AnimationOptions.args[k].args.DurationOptions.args.Enabled.disabled = false
+						if DataBase.Animation[k].CustomDuration.Enabled then
+							AnimationOptions.args[k].args.DurationOptions.disabled = false
+						end
 					end
 				end
 			end
 		end
 
-		Combat.args.Mouse.disabled = true
-		Combat.args.Mouse.args.Enabled.disabled = false
+		Combat.args.MouseOptions.disabled = true
+		Combat.args.MouseOptions.args.Enabled.disabled = false
 
 
 		if DataBase.Combat.Mouse.Enabled then
-			Combat.args.Mouse.disabled = false
+			Combat.args.MouseOptions.disabled = false
 		end
 	end
 end
@@ -164,7 +162,7 @@ local function CreateConfigTab(KeyName)
 				order = 5,
 				type = "input",
 				name = "Change Frames",
-				desc = "Enter the name of the frame that you would like to be affected by this tabs configuration.\nFormat is:\n\n%Frame1%; %Frame2%;\n\nYou can put a 'return' inbetween frames.\n\nUse /framestack to check the names of frames",
+				desc = "Enter the name of the frame that you would like to be affected by this tabs configuration.\nFormat is:\n\n%Frame1%; %Frame2%;\n\nYou can put a 'return' in between frames.\n\nUse /framestack to check the names of frames",
 				multiline = true,
 				get = 
 					function(info)
@@ -231,11 +229,12 @@ local function CreateConfigTab(KeyName)
 				for k, v in pairs(_DataBase) do
 					if string.find(k, "_Tab") then
 						local DataBaseToMove = _DataBase[k]
-						local OptionToMove = _Option[k]
+						local OptionToMove = _Options[k]
 
-						if DataBaseToMove.Config.Order == DataBase.Config.Order then
-							DataBaseToMove.Config.Order = TabToMove.Config.Order + 1
-							OptionToMove.order = DataBaseToMove.Config.Order
+						if DataBase.Config.Order == OptionToMove.order then
+							OptionToMove.order = DataBase.Config.Order + 1
+						elseif DataBase.Config.Order == OptionToMove.order - 1 then
+							OptionToMove.order = DataBase.Config.Order
 						end
 					end
 				end
@@ -249,39 +248,47 @@ local function CreateConfigTab(KeyName)
 		desc = "Move this tab Down one space",
 		func = 
 			function()						
-				DataBase.Config.Order = DataBase.Config.Order + 1 					
+				DataBase.Config.Order = DataBase.Config.Order + 1 				
 				for k, v in pairs(_DataBase) do
 					if string.find(k, "_Tab") then
 						local DataBaseToMove = _DataBase[k]
-						local OptionToMove = _Option[k]
+						local OptionToMove = _Options[k]
 
-						if DataBaseToMove.Config.Order == DataBase.Config.Order then
-							DataBaseToMove.Config.Order = TabToMove.Config.Order - 1
-							OptionToMove.order = DataBaseToMove.Config.Order
+						if DataBase.Config.Order == OptionToMove.order then
+							OptionToMove.order = DataBase.Config.Order - 1
+						elseif DataBase.Config.Order == OptionToMove.order + 1 then
+							OptionToMove.order = DataBase.Config.Order
 						end
 					end
 				end
 				--E:RefreshGUI()
 			end,
 	}
-	if Index == 2 then
+
+	if TabConfig.order == 2 then
 		TabConfig.args.MoveUp.name = "|cff333333Move Up|r"
 		TabConfig.args.MoveUp.disabled = true
+	else
+		TabConfig.args.MoveUp.name = "Move Up"
+		TabConfig.args.MoveUp.disabled = false
 	end
-	if Index == #E.db.ElvUI_Animations then
+	if TabConfig.order == _DataBase.CurrentTabs then
 		TabConfig.args.MoveDown.name = "|cff333333Move Down|r"
 		TabConfig.args.MoveDown.disabled = true
+	else
+		TabConfig.args.MoveDown.name = "Move Down"
+		TabConfig.args.MoveDown.disabled = false
 	end
-
 	
 	return TabConfig
 end
 
-local function CreateAnimationPage(Index, AnimIndex, Order)	
-	local AnimationPage = { }
+local function CreateAnimationPage(KeyName, AnimationKeyName, Order)	
+	local AnimKey = AnimationKeyName
 	
-	local DataBase = E.db.ElvUI_Animations[Index].Animation[AnimIndex]
-
+	local DataBase = _DataBase[KeyName].Animation[AnimKey]
+	
+	local AnimationPage = { }
 	AnimationPage = {
 		order = Order,
 		type = "group",
@@ -294,15 +301,15 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 				desc = "Whether or not to "..DataBase.Name.." this frame",
 				get = 
 					function(info)
-						return E.db.ElvUI_Animations[Index].Animation[AnimIndex].Enabled
+						return DataBase.Enabled
 					end,
 				set = 
 					function(info, value)
-						E.db.ElvUI_Animations[Index].Animation[AnimIndex].Enabled = value
-						Update(Index)	-- We changed a toggle, call our Update function						
+						DataBase.Enabled = value
+						UpdateState(KeyName)	-- We changed a toggle, call our Update function						
 					end,
 			},
-			General = {
+			GeneralOptions = {
 				order = 2,
 				type = "group",
 				name = "General Options",
@@ -321,17 +328,17 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 						},
 						get = 
 							function(info)
-								return E.db.ElvUI_Animations[Index].Animation[AnimIndex].Smoothing
+								return DataBase.Smoothing
 							end,
 						set = 
 							function(info, value)
-								E.db.ElvUI_Animations[Index].Animation[AnimIndex].Smoothing = value
+								DataBase.Smoothing = value
 							end,
 					},
 				},
 			},
 			
-			Duration = {
+			DurationOptions = {
 				order = -1,
 				type = "group",
 				name = "Individual Duration",
@@ -344,12 +351,12 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 						desc = "Whether or not to use an individual animation duration",
 						get = 
 							function(info)
-								return E.db.ElvUI_Animations[Index].Animation[AnimIndex].Duration.Enabled
+								return DataBase.CustomDuration.Enabled
 							end,
 						set = 
 							function(info, value)
-								E.db.ElvUI_Animations[Index].Animation[AnimIndex].Duration.Enabled = value
-								Update(Index)	-- We changed a toggle, call our Update function
+								DataBase.CustomDuration.Enabled = value
+								UpdateState(KeyName)	-- We changed a toggle, call our Update function
 							end,
 					},	
 					Length = {
@@ -361,10 +368,10 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 						max = 5,
 						step = 0.1,
 						get = function(info)
-							return E.db.ElvUI_Animations[Index].Animation[AnimIndex].Duration.Length
+							return DataBase.CustomDuration.Time
 						end,
 						set = function(info, value)
-							E.db.ElvUI_Animations[Index].Animation[AnimIndex].Duration.Length = value
+							DataBase.CustomDuration.Time = value
 						end,
 					},				
 					StartDelay = {
@@ -377,11 +384,11 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 						step = 0.1,
 						get = 
 							function(info)
-								return E.db.ElvUI_Animations[Index].Animation[AnimIndex].Duration.Delay.Start
+								return DataBase.CustomDuration.Delay.Start
 							end,
 						set = 
 							function(info, value)
-								E.db.ElvUI_Animations[Index].Animation[AnimIndex].Duration.Delay.Start = value
+								DataBase.CustomDuration.Delay.Start = value
 							end,
 					},
 					EndDelay = {
@@ -394,11 +401,11 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 						step = 0.1,
 						get = 
 							function(info)
-								return E.db.ElvUI_Animations[Index].Animation[AnimIndex].Duration.Delay.End
+								return DataBase.CustomDuration.Delay.End
 							end,
 						set = 
 							function(info, value)
-								E.db.ElvUI_Animations[Index].Animation[AnimIndex].Duration.Delay.End = value
+								DataBase.CustomDuration.Delay.End = value
 							end,
 					},
 				},
@@ -411,8 +418,6 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 				func = 
 					function()
 						local Loop = { Start = Index, End = Index,}
-						
-						ElvUI_Animations:ReloadCombatAnimationGroup()
 
 						if Index == 1 then
 							Loop = { Start = 2, End = #E.db.ElvUI_Animations, }
@@ -440,7 +445,7 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 	}
 	
 	if DataBase.AnimationName == "Alpha" then
-		AnimationPage.args.General.args["Start"..DataBase.Effect] = {
+		AnimationPage.args.GeneralOptions.args["Start"..DataBase.Effect] = {
 			order = 1,
 			type = "range",
 			name = "Start "..DataBase.Effect,
@@ -450,14 +455,14 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 			step = 0.01,
 			get = 
 				function(info)
-					return E.db.ElvUI_Animations[Index].Animation[AnimIndex].Alpha.Start
+					return DataBase.Alpha.Start
 				end,
 			set = 
 				function(info, value)
-					E.db.ElvUI_Animations[Index].Animation[AnimIndex].Alpha.Start = value
+					DataBase.Alpha.Start = value
 				end,									
 		}
-		AnimationPage.args.General.args["End"..DataBase.Effect] = {
+		AnimationPage.args.GeneralOptions.args["End"..DataBase.Effect] = {
 			order = 2,
 			type = "range",
 			name = "End "..DataBase.Effect,
@@ -467,16 +472,16 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 			step = 0.01,
 			get = 
 				function(info)
-					return E.db.ElvUI_Animations[Index].Animation[AnimIndex].Alpha.End
+					return DataBase.Alpha.End
 				end,
 			set = 
 				function(info, value)
-					E.db.ElvUI_Animations[Index].Animation[AnimIndex].Alpha.End = value
+					DataBase.Alpha.End = value
 				end,									
 		}
 	end
 	if DataBase.AnimationName == "Translation" then
-		AnimationPage.args.General.args[DataBase.Effect.."X"] = {
+		AnimationPage.args.GeneralOptions.args[DataBase.Effect.."X"] = {
 			order = 1,
 			type = "range",
 			name = DataBase.Effect.."X",
@@ -486,14 +491,14 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 			step = 5,
 			get = 
 				function(info)
-					return E.db.ElvUI_Animations[Index].Animation[AnimIndex].Offset.X
+					return DataBase.Offset.X
 				end,
 			set = 
 				function(info, value)
-					E.db.ElvUI_Animations[Index].Animation[AnimIndex].Offset.X = value
+					DataBase.Offset.X = value
 				end,									
 		}
-		AnimationPage.args.General.args[DataBase.Effect.."Y"] = {
+		AnimationPage.args.GeneralOptions.args[DataBase.Effect.."Y"] = {
 			order = 2,
 			type = "range",
 			name = DataBase.Effect.."Y",
@@ -503,14 +508,14 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 			step = 5,
 			get = 
 				function(info)
-					return E.db.ElvUI_Animations[Index].Animation[AnimIndex].Offset.Y
+					return DataBase.Offset.Y
 				end,
 			set = 
 				function(info, value)
-					E.db.ElvUI_Animations[Index].Animation[AnimIndex].Offset.Y = value
+					DataBase.Offset.Y = value
 				end,				
 		}
-		AnimationPage.args.General.args["DistanceX"] = {
+		AnimationPage.args.GeneralOptions.args["DistanceX"] = {
 			order = 3,
 			type = "range",
 			name = "DistanceX",
@@ -520,14 +525,14 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 			step = 5,
 			get = 
 				function(info)
-					return E.db.ElvUI_Animations[Index].Animation[AnimIndex].Distance.X
+					return DataBase.Distance.X
 				end,
 			set = 
 				function(info, value)
-					E.db.ElvUI_Animations[Index].Animation[AnimIndex].Distance.X = value
+					DataBase.Distance.X = value
 				end,
 		}
-		AnimationPage.args.General.args["DistanceY"] = {
+		AnimationPage.args.GeneralOptions.args["DistanceY"] = {
 			order = 4,
 			type = "range",
 			name = "DistanceY",
@@ -536,10 +541,10 @@ local function CreateAnimationPage(Index, AnimIndex, Order)
 			max = 150,
 			step = 5,
 			get = function(info)
-				return E.db.ElvUI_Animations[Index].Animation[AnimIndex].Distance.Y
+				return DataBase.Distance.Y
 			end,
 			set = function(info, value)
-				E.db.ElvUI_Animations[Index].Animation[AnimIndex].Distance.Y = value
+				DataBase.Distance.Y = value
 			end,
 		}
 	end
@@ -713,7 +718,7 @@ local function CreateTreeElement(KeyName)
 								set = 
 									function(info, value)
 										DataBase.Combat.Mouse.Enabled = value
-										Update(i)	-- We changed a toggle, call our Update function
+										UpdateState(KeyName)	-- We changed a toggle, call our Update function
 									end,
 							},
 							DurationOn = {
@@ -766,12 +771,12 @@ local function CreateTreeElement(KeyName)
 				},
 			},
 					
-			Animation = {
+			AnimationOptions = {
 				order = 3,
 				type = "group",
 				name = "Animation Options",	
 				args = {
-					General = {
+					GeneralOptions = {
 						order = 5,
 						type = "group",
 						name = "General Options",
@@ -787,11 +792,11 @@ local function CreateTreeElement(KeyName)
 								step = 0.1,
 								get = 
 									function(info)
-										return DataBase.Animation.Default.Delay.Start
+										return DataBase.Animation.DefaultDuration.Delay.Start
 									end,
 								set = 
 									function(info, value)
-										DataBase.Animation.Default.Delay.Start = value
+										DataBase.Animation.DefaultDuration.Delay.Start = value
 									end,
 							},
 							EndDelay = {
@@ -804,11 +809,11 @@ local function CreateTreeElement(KeyName)
 								step = 0.1,
 								get = 
 									function(info)
-										return DataBase.Animation.Default.Delay.End
+										return DataBase.Animation.DefaultDuration.Delay.End
 									end,
 								set = 
 									function(info, value)
-										DataBase.Animation.Default.Delay.End = value
+										DataBase.Animation.DefaultDuration.Delay.End = value
 									end,
 							},
 							Duration = {
@@ -821,11 +826,11 @@ local function CreateTreeElement(KeyName)
 								step = 0.1,
 								get = 
 									function(info)
-										return DataBase.Animation.Default.Duration
+										return DataBase.Animation.DefaultDuration.Time
 									end,
 								set = 
 									function(info, value)
-										DataBase.Animation.Default.Duration = value
+										DataBase.Animation.DefaultDuration.Time = value
 									end,
 							},
 						},
@@ -848,12 +853,12 @@ local function CreateTreeElement(KeyName)
 
 	for k, v in pairs(DataBase.Animation) do
 		if string.find(k, "_Tab") then
-			TreeElement.args.Animation.args[k] = CreateAnimationPage(KeyName, k)
+			TreeElement.args.AnimationOptions.args[k] = CreateAnimationPage(KeyName, k)
 		end
 	end
 				
 	if KeyName == "Default_Tab" then
-		TreeElement.args.Animation.args.TestAll = {
+		TreeElement.args.AnimationOptions.args.TestAll = {
 			order = 1,
 			type = "execute",
 			name = "Test All!",
@@ -869,13 +874,13 @@ local function CreateTreeElement(KeyName)
 		}			
 		for k, v in pairs(_DataBase) do
 			if string.find(k, "_Tab") then
-				TreeElement.args.TabConfig.args[_System:GetKey(_DataBase[k]).."Config"] = CreateConfigTab(k)
+				TreeElement.args.TabConfig.args[KeyName.."Config"] = CreateConfigTab(k)
 			end
 		end		
 	else
-		TreeElement.args.TabConfig.args[_System:GetKey(DataBase).."Config"] = CreateConfigTab(i)
+		TreeElement.args.TabConfig.args[KeyName.."Config"] = CreateConfigTab(KeyName)
 
-		TreeElement.args.Combat.args.Enabled = {
+		TreeElement.args.CombatOptions.args.Enabled = {
 			order = 1,
 			type = "toggle",
 			name = "Enabled",
@@ -887,10 +892,10 @@ local function CreateTreeElement(KeyName)
 			set = 
 				function(info, value)
 					DataBase.Combat.Enabled = value
-					Update(i)	-- We changed a toggle, call our Update function
+					UpdateState(KeyName)	-- We changed a toggle, call our Update function
 				end,
 		}
-		TreeElement.args.Combat.args.UseDefaults = {
+		TreeElement.args.CombatOptions.args.UseDefaults = {
 			order = 2,
 			type = "toggle",
 			name = "Use Defaults",
@@ -902,10 +907,10 @@ local function CreateTreeElement(KeyName)
 			set = 
 				function(info, value)
 					DataBase.Combat.UseDefaults = value
-					Update(i)	-- We changed a toggle, call our Update function
+					UpdateState(KeyName)	-- We changed a toggle, call our Update function
 				end,
 		}
-		TreeElement.args.Animation.args.Enabled = {
+		TreeElement.args.AnimationOptions.args.Enabled = {
 			order = 1,
 			type = "toggle",
 			name = "Enabled",
@@ -917,10 +922,10 @@ local function CreateTreeElement(KeyName)
 			set = 
 				function(info, value)
 					DataBase.Animation.Enabled = value
-					Update(i)	-- We changed a toggle, call our Update function
+					UpdateState(KeyName)	-- We changed a toggle, call our Update function
 				end,
 		}
-		TreeElement.args.Animation.args.TestAll = {
+		TreeElement.args.AnimationOptions.args.TestAll = {
 			order = 2,
 			type = "execute",
 			name = "Test All!",
@@ -932,7 +937,7 @@ local function CreateTreeElement(KeyName)
 					ElvUI_Animations:AttemptAnimation(i)
 				end,
 		}
-		TreeElement.args.Animation.args.General.args.UseDefaults = {
+		TreeElement.args.AnimationOptions.args.GeneralOptions.args.UseDefaults = {
 			order = 1,
 			type = "toggle",
 			name = "Use Defaults",
@@ -944,7 +949,7 @@ local function CreateTreeElement(KeyName)
 			set = 
 				function(info, value)
 					DataBase.Animation.UseDefaults = value
-					Update(i)	-- We changed a toggle, call our Update function
+					UpdateState(KeyName)	-- We changed a toggle, call our Update function
 				end,
 		}
 	end
@@ -963,7 +968,7 @@ function _ElvUI_Animations:InsertOptions()
 
 	_DataBase = E.db.ElvUI_Animations
 	_Options = E.Options.args.ElvUI_Animations.args
-	_AddonTable.Cache:InitCache()
+	_AddonTable._Cache:InitCache()
 	
 	_Options.Animate = {
 		order = 1,
@@ -975,8 +980,10 @@ function _ElvUI_Animations:InsertOptions()
 		end,
 		set = function(info, value)
 			_DataBase.Animate = value
-			for i = 1, #_DataBase do
-				Update(i)
+			for k, v in pairs(_DataBase) do
+				if string.find(k, "_Tab") then
+					UpdateState(k)
+				end
 			end
 		end,
 	}
@@ -990,8 +997,10 @@ function _ElvUI_Animations:InsertOptions()
 		end,
 		set = function(info, value)
 			_DataBase.Combat = value
-			for i = 1, #_DataBase do
-				Update(i)
+			for k, v in pairs(_DataBase) do
+				if string.find(k, "_Tab") then
+					UpdateState(k)
+				end
 			end
 		end,
 	}
@@ -1023,7 +1032,7 @@ function _ElvUI_Animations:InsertOptions()
 		order = 5,
 		type = "execute",
 		name = "Restore Defaults",
-		desc = "Restore all values back to default, but just for this addon not ElvUI don't worry!",
+		desc = "Restore all values back to default, but just for this add-on not ElvUI don't worry!",
 		func = function()
 			E:StaticPopup_Show("RestoreDefaults")
 		end,
@@ -1046,7 +1055,7 @@ function _ElvUI_Animations:InsertOptions()
 		set = 
 			function(info, value)
 				_DataBase.CurrentTabs = _DataBase.CurrentTabs + 1
-				_DataBase["Custom_Tab".._DataBase.CurrentTabs] = _System:Copy(DEFAULT)
+				_DataBase["Custom_Tab".._DataBase.CurrentTabs] = _System:Copy(_AddonTable._Defaults.Tab.Default)
 
 				_DataBase["Custom_Tab".._DataBase.CurrentTabs].Config = {
 					Order = _DataBase.CurrentTabs,			-- The name of the key in the table. ex: E.Options.args.ElvUI_Animations.args[%THIS_VALUE_HERE%]
@@ -1060,7 +1069,7 @@ function _ElvUI_Animations:InsertOptions()
 				}
 				
 				_Options["Custom_Tab".._DataBase.CurrentTabs] = { }
-				--E:RefreshGUI()
+				E:RefreshGUI()
 			end,
 	}
 	_Options.Header2 = {
@@ -1075,11 +1084,11 @@ function _ElvUI_Animations:InsertOptions()
 		values = { },
 		get = 
 			function(info)
-				return _AddonTable.TabToDelete
+				return _AddonTable._NotKept.TabToDelete
 			end,
 		set = 
 			function(info, value)
-				_AddonTable.TabToDelete = value
+				_AddonTable._NotKept.TabToDelete = value
 			end,				
 	}
 	_Options.DeleteThis = {
@@ -1089,6 +1098,7 @@ function _ElvUI_Animations:InsertOptions()
 		desc = "Delete the selected Tab",
 		func = 
 			function()
+				E.PopupDialogs.DeleteThis.text = "You are about to delete ".._DataBase[_AddonTable._NotKept.TabToDelete].." tab!\nThis cannot be reversed. Are you sure?"
 				E:StaticPopup_Show("DeleteTab")
 			end,
 	}
@@ -1099,6 +1109,8 @@ function _ElvUI_Animations:InsertOptions()
 				_Options.TabSelection.values[k] = _DataBase[k].Config.Name
 			end
 			_Options[k] = CreateTreeElement(k)
+
+			UpdateState(k)
 		end
 	end					
 		
@@ -1130,37 +1142,36 @@ function _ElvUI_Animations:InsertOptions()
 --			E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName].args.Animation.disabled = false
 --			E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[i].Config.KeyName].args.Combat.disabled = false
 --		end
-end
 
--- Setup Restore Defaults confirmation popup
-E.PopupDialogs.RestoreDefaults = {
-	text = "You are about to set ALL values back to default.\n This cannot be reversed. Are you sure?",
-	button1 = "Yes",
-	button2 = "No",
-	OnAccept = 
-		function() 
-			E:CopyTable(E.db.ElvUI_Animations, P.ElvUI_Animations)
-			E:RefreshGUI()
-		end,
-	timeout = 0,
-	whileDead = 1,
-	preferredIndex = 3,
-}
-E.PopupDialogs.DeleteTab = {
-	text = "You are about to delete the selected tab!\nThis cannot be reversed. Are you sure?",
-	button1 = "Yes",
-	button2 = "No",
-	OnAccept = 
-		function() 
-			E.Options.args.ElvUI_Animations.args[E.db.ElvUI_Animations[tonumber(V.ElvUI_Animations.DeleteTab)].Config.KeyName] = nil
-			table.remove(E.db.ElvUI_Animations, tonumber(V.ElvUI_Animations.DeleteTab))
-			ElvUI_Animations:InsertOptions()
-			E:RefreshGUI()
-		end,
-	timeout = 0,
-	whileDead = 1,
-	preferredIndex = 3,
-}
+	-- Setup Restore Defaults confirmation popup
+	E.PopupDialogs.RestoreDefaults = {
+		text = "You are about to set ALL values back to default.\n This cannot be reversed. Are you sure?",
+		button1 = "Yes",
+		button2 = "No",
+		OnAccept = 
+			function() 
+				E:CopyTable(E.db.ElvUI_Animations, P.ElvUI_Animations)
+				E:RefreshGUI()
+			end,
+		timeout = 0,
+		whileDead = 1,
+		preferredIndex = 3,
+	}
+	E.PopupDialogs.DeleteThis = {
+		text = "",
+		button1 = "Yes",
+		button2 = "No",
+		OnAccept = 
+			function() 
+				_Options[_AddonTable._NotKept.TabToDelete] = nil
+				_DataBase[_AddonTable._NotKept.TabToDelete] = nil
+				E:RefreshGUI()
+			end,
+		timeout = 0,
+		whileDead = 1,
+		preferredIndex = 3,
+	}
+end
 
 --region Animation Group Functions and Alias
 --region Animation Group
