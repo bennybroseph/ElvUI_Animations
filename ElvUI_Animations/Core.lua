@@ -11,11 +11,16 @@ local E, L, V, P, G = unpack(ElvUI); -- Import: Engine, Locales, PrivateDB, Prof
 
 local _AddonName, _AddonTable = ... -- See http://www.wowinterface.com/forums/showthread.php?t=51502&p=304704&postcount=2
 
-local MyWorldFrame -- Will be used to create an invisible frame parented to the actual WorldFrame
-local MyUIParent
 
-local PrevFocusFrame = nil
-local InCombat = false
+_AddonTable._Core = CreateFrame("Frame", "ElvUI_Animation_UIParent", UIParent)
+
+local _Core = _AddonTable._Core
+local _Cache = _AddonTable._Cache
+local _Config = _AddonTable._Config
+local _Animations = _AddonTable._NotKept.Animations
+local _CombatAnimations = _AddonTable._NotKept.CombatAnimations
+
+local _DataBase
 
 --function ElvUI_Animations:Appear(Index)
 --	if E.db.ElvUI_Animations[Index].Animation.Enabled then
@@ -299,81 +304,121 @@ local InCombat = false
 --		end
 --	end
 --end
+function _AddonTable._Core:Animate(KeyName)
+	if KeyName == nil then
+		for k, v in pairs(_DataBase) do
+			if string.find(k, "_Tab") and k ~= "Default_Tab" then
+				self:Animate(k)
+			end
+		end
+	else
+		if _DataBase[KeyName].Animation.Enabled then
+			for i = 1, #_DataBase[KeyName].Config.Frame do
+				if _Animations[KeyName].AnimationGroup[i] ~= nil and GetClickFrame(_DataBase[KeyName].Config.Frame[i]):IsVisible()  then
+					_Animations[KeyName].AnimationGroup[i]:Play()
+				end
+			end
+		end
+	end
+end
 
---function ElvUI_Animations:OnLoad()
---	ElvUI_Animations:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
---	ElvUI_Animations:RegisterEvent("PLAYER_STARTED_MOVING", "OnEvent")
---	ElvUI_Animations:RegisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
---	ElvUI_Animations:RegisterEvent("PLAYER_REGEN_DISABLED", "OnEvent")
---	ElvUI_Animations:RegisterEvent("PLAYER_FLAGS_CHANGED", "OnEvent")
+function _AddonTable._Core:CombatAnimate(KeyName)
+	if KeyName == nil then
+		for k, v in pairs(_DataBase) do
+			if string.find(k, "_Tab") and k ~= "Default_Tab" then
+				self:CombatAnimate(k)
+			end
+		end
+	else
+		if _DataBase[KeyName].Combat.Enabled then
+			for i = 1, #_DataBase[KeyName].Config.Frame do
+				if _CombatAnimations[KeyName].AnimationGroup[i] ~= nil and GetClickFrame(_DataBase[KeyName].Config.Frame[i]):IsVisible() then
+					if self.InCombat then
+						_CombatAnimations[KeyName].AnimationGroup[i].In:Play()
+					elseif not self.InCombat then
+						_CombatAnimations[KeyName].AnimationGroup[i].Out:Play()
+					end
+				end
+			end
+		end
+	end
+end
 
---	MyWorldFrame = CreateFrame("Frame", "Test", WorldFrame)
-
---	MyWorldFrame:SetPropagateKeyboardInput(true)
-
---	MyWorldFrame:SetScript("OnKeyDown", 
---		function(self, button)
---			ElvUI_Animations:OnEvent("PLAYER_STARTED_MOVING")
---		end)
-
---	MyUIParent = CreateFrame("Frame", "MyUIParent", UIParent)
-
---	MyUIParent:SetScript("OnUpdate",
+function _AddonTable._Core:OnLoad()
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
+	self:RegisterEvent("PLAYER_STARTED_MOVING", "OnEvent")
+	self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnEvent")
+	self:RegisterEvent("PLAYER_REGEN_DISABLED", "OnEvent")
+	self:RegisterEvent("PLAYER_FLAGS_CHANGED", "OnEvent")
+	
+	self:SetScript("OnEvent", self.OnEvent)
+--	self:SetScript("OnUpdate",
 --		function(self, elapsed)
 --			ElvUI_Animations:OnUpdate(elapsed)
 --		end)
---end
 
---function ElvUI_Animations:OnEvent(Event, ...)
---	if Event == "PLAYER_ENTERING_WORLD" then	
---		ElvUI_Animations:ReloadCombatAnimationGroup()
+	self.MyWorldFrame = CreateFrame("Frame", "Test", WorldFrame)
 
---		if E.db.ElvUI_Animations.Animate then
---			if E.db.ElvUI_Animations.Lag then
---				UIParent:Hide()
---			else
---				UIParent:SetAlpha(0)
---			end
+	self.MyWorldFrame:SetPropagateKeyboardInput(true)
 
---			MyWorldFrame:Show()
---			ShouldAppear = true
---		end
---	end
+	self.MyWorldFrame:SetScript("OnKeyDown", 
+		function(self, button)
+			_AddonTable._Core:OnEvent("PLAYER_STARTED_MOVING")
+		end)
 
---	if (Event == "PLAYER_STARTED_MOVING" or Event == "PLAYER_REGEN_DISABLED") and ShouldAppear and E.db.ElvUI_Animations.Animate then
---		if E.db.ElvUI_Animations.Lag then
---			UIParent:Show()
---		else
---			UIParent:SetAlpha(1)
---		end
---		MyWorldFrame:Hide()
---		for i = 2, #E.db.ElvUI_Animations do
---			ElvUI_Animations:AttemptAnimation(i)
---		end
---		ShouldAppear = false		
---	end
---	if Event == "PLAYER_FLAGS_CHANGED" and UnitIsAFK("player") and E.db.ElvUI_Animations.Animate and E.db.ElvUI_Animations.AFK then
---		MyWorldFrame:Show()
---		ShouldAppear = true
---	end
+	self.ShouldAppear = false
+	self.InCombat = false
+end
 
---	if Event == "PLAYER_REGEN_DISABLED" then
---		InCombat = true
---		if E.db.ElvUI_Animations.Combat then
---			for i = 2, #E.db.ElvUI_Animations do
---				ElvUI_Animations:AttemptCombatFade(i, "In")
---			end
---		end
---	end
---	if Event == "PLAYER_REGEN_ENABLED" then
---		InCombat = false
---		if E.db.ElvUI_Animations.Combat then
---			for i = 2, #E.db.ElvUI_Animations do
---				ElvUI_Animations:AttemptCombatFade(i, "Out")
---			end
---		end
---	end
---end
+function _AddonTable._Core:OnEvent(Event, ...)
+	if Event == "PLAYER_ENTERING_WORLD" then
+		_DataBase = E.db.ElvUI_Animations
+		_Cache:Init()
+		_Config:Init()
+
+		_Animations:SetAnimGroups()
+		_Cache:AnimTab()
+
+		_CombatAnimations:SetAnimGroups()
+		_Cache:CombatAnimTab()
+		
+		if _DataBase.Animate then
+			if _DataBase.Lag then
+				UIParent:Hide()
+			else
+				UIParent:SetAlpha(0)
+			end
+
+			self.MyWorldFrame:Show()
+			self.ShouldAppear = true
+		end
+	end
+
+	if (Event == "PLAYER_STARTED_MOVING" or Event == "PLAYER_REGEN_DISABLED") and self.ShouldAppear and _DataBase.Animate then
+		if _DataBase.Lag then
+			UIParent:Show()
+		else
+			UIParent:SetAlpha(1)
+		end
+		self.MyWorldFrame:Hide()
+		UIParent:Show()
+		self:Animate()
+		self.ShouldAppear = false		
+	end
+	if Event == "PLAYER_FLAGS_CHANGED" and UnitIsAFK("player") and _DataBase.Animate and _DataBase.AFK then
+		self.MyWorldFrame:Show()
+		self.ShouldAppear = true
+	end
+
+	if Event == "PLAYER_REGEN_DISABLED" then
+		self.InCombat = true
+		self:CombatAnimate()
+	end
+	if Event == "PLAYER_REGEN_ENABLED" then
+		self.InCombat = false
+		self:CombatAnimate()
+	end
+end
 
 --function ElvUI_Animations:OnUpdate(DeltaTime)
 --	local FocusFrame = GetMouseFocus()
@@ -401,7 +446,7 @@ local InCombat = false
 --	--collectgarbage()
 --end
 
---ElvUI_Animations:OnLoad()
+_AddonTable._Core:OnLoad()
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 -- End of Core.lua

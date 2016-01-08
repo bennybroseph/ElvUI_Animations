@@ -92,7 +92,8 @@ _AddonTable._Defaults = {
 					},
 
 					Alpha = {
-						Change = 0.9,
+						Start = 0,
+						End = 0.9
 					},
 
 					Smoothing = "IN",
@@ -214,7 +215,7 @@ end
 
 P.ElvUI_Animations['Default_Tab'].Config = {
 	Order = 1,					-- Order that this tab should show up in the configuration
-	Frame = { "All" },			-- The name of the frames affected by this tabs settings
+	Frame = nil,				-- The name of the frames affected by this tabs settings
 	Name = L['Default'],		-- The name displayed to the user for this tab
 	Error = false,
 }
@@ -366,23 +367,86 @@ _AddonTable._NotKept = { }
 
 --region Setting up Animation Groups
 _AddonTable._NotKept.Animations = { }
-for k, v in pairs(_AddonTable._Defaults.Tab.Names) do
-	local Animations = _AddonTable._NotKept.Animations
-	
-	Animations[k] = { AnimationGroup = { }, Animation = { }, }
-end
 
 _AddonTable._NotKept.CombatAnimations = { }
-for k, v in pairs(_AddonTable._Defaults.Tab.Names) do
-	local Animations = _AddonTable._NotKept.CombatAnimations
-	
-	Animations[k] = { In = { AnimationGroup = { }, Animation = { }, }, Out = { AnimationGroup = { }, Animation = { }, }, }
-end
 --endregion
 _AddonTable._NotKept.ShouldAppear = false
 _AddonTable._NotKept.TabToDelete = ""
 
 _AddonTable._NotKept.CombatAnimations.AlphaBuildUp = { }		-- For some reason adding less than 0.01 alpha to a frame seems to cause floating point error where it isn't added to the overall alpha of the frame
+
+--region Animation Group Functions and Alias
+--region Animation Group
+function _AddonTable._NotKept.Animations:SetAnimationGroups(KeyName)
+	local _DataBase = E.db.ElvUI_Animations
+
+	if KeyName == nil then
+		for k, v in pairs(_DataBase) do
+			if string.find(k, "_Tab") and k ~= "Default_Tab" then
+				self:SetAnimationGroups(k)
+			end
+		end
+	else
+		_AddonTable._NotKept.Animations[KeyName] = { AnimationGroup = { }, }
+
+		local Animations = _AddonTable._NotKept.Animations[KeyName]
+		local DataBase = _DataBase[KeyName]			
+			
+		for i = 1, #DataBase.Config.Frame do
+			local Frame = GetClickFrame(DataBase.Config.Frame[i])
+
+			if Frame ~= nil then					
+				Animations.AnimationGroup[i] = Frame:CreateAnimationGroup()
+				Animations.AnimationGroup[i].Animation = { }
+				for k, v in pairs(DataBase.Animation) do
+					if string.find(k, "_Tab") then
+						Animations.AnimationGroup[i].Animation[k] = Animations.AnimationGroup[i]:CreateAnimation(DataBase.Animation[k].AnimationName)
+					end
+				end
+			end
+		end
+	end
+end
+--endregion
+
+--region Combat Animation Group
+function _AddonTable._NotKept.CombatAnimations:SetAnimationGroups(KeyName)
+	local _DataBase = E.db.ElvUI_Animations
+
+	if KeyName == nil then
+		for k, v in pairs(_DataBase) do
+			if string.find(k, "_Tab") and k ~= "Default_Tab" then
+				self:SetAnimationGroups(k)
+			end
+		end
+	else
+		_AddonTable._NotKept.CombatAnimations[KeyName] = { AnimationGroup = { }, Animation = { }, }
+
+		local Animations = _AddonTable._NotKept.CombatAnimations[KeyName]
+		local DataBase = _DataBase[KeyName]
+			
+		for i = 1, #DataBase.Config.Frame do
+			local Frame = GetClickFrame(DataBase.Config.Frame[i])
+				
+			if Frame ~= nil then
+				Animations.AnimationGroup[i] = { In = { }, Out = { }, }
+				Animations.Animation[i] = { In = { }, Out = { }, }
+
+				Animations.AnimationGroup[i].In = Frame:CreateAnimationGroup()
+				Animations.Animation[i].In = Animations.AnimationGroup[i].In:CreateAnimation("Alpha")
+				
+				Animations.AnimationGroup[i].Out = Frame:CreateAnimationGroup()
+				Animations.Animation[i].Out = Animations.AnimationGroup[i].Out:CreateAnimation("Alpha")
+			end
+		end
+	end 
+end
+--endregion
+
+_AddonTable._NotKept.Animations.SetAnimGroups = _AddonTable._NotKept.Animations.SetAnimationGroups
+
+_AddonTable._NotKept.CombatAnimations.SetAnimGroups = _AddonTable._NotKept.CombatAnimations.SetAnimationGroups
+--endregion
 --endregion
 ---------------------------------------------------------------------------------------------------------------------------------------
 -- End of defaults.lua
